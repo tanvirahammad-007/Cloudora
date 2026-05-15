@@ -1,0 +1,6 @@
+{
+  "name": "Aether - Global Weather Dashboard",
+  "description": "A premium glassmorphism weather dashboard featuring real-time data, 5-day forecasts, and hourly trends.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": []
+}
