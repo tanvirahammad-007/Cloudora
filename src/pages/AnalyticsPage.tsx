@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
             <img 
               src={bgImage} 
               alt="Analytics Background" 
-              className="w-full h-full object-cover grayscale opacity-50"
+              className="w-full h-full object-cover opacity-50 saturate-[1.2]"
             />
           </motion.div>
         )}

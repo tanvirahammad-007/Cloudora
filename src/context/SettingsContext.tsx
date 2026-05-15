@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 export type TemperatureUnit = 'C' | 'F';
 export type WindSpeedUnit = 'km/h' | 'mph' | 'm/s' | 'knots';
 export type BlurIntensity = 'none' | 'low' | 'medium' | 'high';
-export type Language = 'en' | 'es' | 'fr' | 'de' | 'it';
+export type Language = 'en' | 'bn' | 'es' | 'fr' | 'de' | 'it';
 
 export interface AppSettings {
   theme: 'dark' | 'light';

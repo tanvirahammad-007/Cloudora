@@ -47,7 +47,7 @@ export default function HourlyForecast() {
           <h3 className="typo-label mb-1">Forecast Cycles</h3>
           <p className="typo-h3">Today's Temperature</p>
         </div>
-        <div className="typo-label px-4 py-1.5 rounded-full border border-[var(--border-color)]">
+        <div className="typo-label px-4 py-1.5 rounded-full border border-sky-500/20 text-sky-400">
           24h Window
         </div>
       </div>
@@ -68,7 +68,7 @@ export default function HourlyForecast() {
               <img 
                 src={`https://openweathermap.org/img/wn/${h.icon}@2x.png`} 
                 alt={h.condition}
-                className="w-14 h-14 drop-shadow-xl relative z-10 invert dark:invert-0 grayscale brightness-[1.2]"
+                className="w-14 h-14 drop-shadow-xl relative z-10 invert dark:invert-0 brightness-[1.2]"
               />
             </div>
             <span className="typo-h3 leading-none">{h.temp}°</span>
@@ -81,8 +81,8 @@ export default function HourlyForecast() {
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="currentColor" stopOpacity={0.5}/>
-                <stop offset="95%" stopColor="currentColor" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4}/>
+                <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <XAxis hide dataKey="time" />
@@ -104,7 +104,7 @@ export default function HourlyForecast() {
             <Area 
               type="monotone" 
               dataKey="temp" 
-              stroke="var(--text-main)" 
+              stroke="#38bdf8" 
               strokeWidth={2}
               fillOpacity={1} 
               fill="url(#colorTemp)" 

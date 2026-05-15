@@ -23,12 +23,16 @@ import {
 } from 'lucide-react';
 import { useSettings, TemperatureUnit, WindSpeedUnit, BlurIntensity, Language } from '../context/SettingsContext';
 import { useWeather } from '../context/WeatherContext';
+import { useTranslation } from '../hooks/useTranslation';
 import { cn } from '../lib/utils';
 import { useState } from 'react';
 
+
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const { settings, updateSettings, toggleTheme } = useSettings();
   const { searchHistory, removeFromHistory, clearHistory } = useWeather();
+
 
   const tempUnits: { label: string, value: TemperatureUnit }[] = [
     { label: 'Celsius (°C)', value: 'C' },
@@ -51,11 +55,13 @@ export default function SettingsPage() {
 
   const languages: { label: string, value: Language }[] = [
     { label: 'English', value: 'en' },
+    { label: 'বাংলা', value: 'bn' },
     { label: 'Español', value: 'es' },
     { label: 'Français', value: 'fr' },
     { label: 'Deutsch', value: 'de' },
     { label: 'Italiano', value: 'it' }
   ];
+
 
   return (
     <motion.div 
@@ -71,32 +77,33 @@ export default function SettingsPage() {
             <Settings size={32} />
           </div>
           <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-[var(--text-main)] tracking-tight">Configuration</h1>
+            <h1 className="text-3xl sm:text-4xl font-black text-[var(--text-main)] tracking-tight">{t('settings')}</h1>
             <p className="typo-label mt-1">Personal Experience Parameters</p>
           </div>
+
         </div>
 
         {/* Units & Localization */}
         <section className="space-y-6">
-          <SectionHeader title="Regional Scaling" />
+          <SectionHeader title={t('units')} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SelectorSetting 
               icon={Thermometer}
-              label="Thermal Scale"
+              label={t('tempUnit')}
               options={tempUnits}
               activeValue={settings.tempUnit}
               onChange={(val) => updateSettings({ tempUnit: val as TemperatureUnit })}
             />
             <SelectorSetting 
               icon={Wind}
-              label="Velocity Metric"
+              label={t('windUnit')}
               options={windUnits}
               activeValue={settings.windUnit}
               onChange={(val) => updateSettings({ windUnit: val as WindSpeedUnit })}
             />
             <SelectorSetting 
               icon={Languages}
-              label="System Language"
+              label={t('language')}
               options={languages}
               activeValue={settings.language}
               onChange={(val) => updateSettings({ language: val as Language })}
@@ -111,34 +118,35 @@ export default function SettingsPage() {
           </div>
         </section>
 
+
         {/* Global Appearance */}
         <section className="space-y-6">
-          <SectionHeader title="Visual Interface" />
+          <SectionHeader title={t('appearance')} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ToggleSetting 
               icon={settings.theme === 'dark' ? Moon : Sun}
-              label="Luminous Mode"
+              label={t('theme')}
               description="Calibrate for low-light environments"
               checked={settings.theme === 'dark'}
               onChange={toggleTheme}
             />
             <ToggleSetting 
               icon={Zap}
-              label="Motion Dynamics"
+              label={t('animations')}
               description="Enable fluid interface interactions"
               checked={settings.animationsEnabled}
               onChange={(checked) => updateSettings({ animationsEnabled: checked })}
             />
             <ToggleSetting 
               icon={Layout}
-              label="High Density"
+              label={t('compactMode')}
               description="Optimized layout for detailed analysis"
               checked={settings.compactMode}
               onChange={(checked) => updateSettings({ compactMode: checked })}
             />
             <ToggleSetting 
               icon={Map}
-              label="Dynamic Atmosphere"
+              label={t('dynamicBg')}
               description="Context-aware background patterns"
               checked={settings.dynamicBackground}
               onChange={(checked) => updateSettings({ dynamicBackground: checked })}
@@ -147,7 +155,7 @@ export default function SettingsPage() {
           <div className="p-1">
              <SelectorSetting 
               icon={Eye}
-              label="Aesthetic Depth"
+              label={t('blur')}
               description="Refine your glassmorphism intensity"
               options={blurLevels}
               activeValue={settings.blurIntensity}
@@ -157,10 +165,12 @@ export default function SettingsPage() {
           </div>
         </section>
 
+
         {/* Notifications & Alerts */}
         <section className="space-y-6">
           <div className="flex items-center justify-between">
-            <SectionHeader title="Intelligent Broadcasts" />
+            <SectionHeader title={t('notifications')} />
+
             <ToggleSwitch 
               checked={settings.notificationsEnabled}
               onChange={(checked) => updateSettings({ notificationsEnabled: checked })}

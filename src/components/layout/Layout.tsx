@@ -35,18 +35,12 @@ export default function Layout() {
           <Sidebar className="w-16 lg:w-20" />
           
           <main className="flex-1 flex flex-col h-full overflow-y-auto hide-scrollbar">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={location.key}
-                initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.02 }}
-                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="flex-1 h-full"
+              <div
+                key={location.pathname}
+                className="flex-1 h-full animate-fadeIn"
               >
                 <Outlet />
-              </motion.div>
-            </AnimatePresence>
+              </div>
           </main>
         </div>
       </div>

@@ -43,7 +43,7 @@ export default function WeeklyForecast() {
     <div className="glass-panel p-[var(--spacing-gap-md)] flex flex-col rounded-[4.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/80 h-full overflow-hidden group transition-all duration-700 hover:shadow-2xl hover:shadow-[var(--text-main)]/5">
       <div className="flex items-center justify-between mb-[var(--spacing-gap-lg)]">
         <div className="flex items-center gap-5">
-          <div className="p-4 rounded-[1.25rem] bg-[var(--text-main)] text-[var(--bg-color)] shadow-2xl">
+          <div className="p-4 rounded-[1.25rem] bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-2xl shadow-violet-500/20">
             <Calendar size={24} strokeWidth={1.5} />
           </div>
           <h3 className="typo-h3">Forecast Horizon</h3>
@@ -67,7 +67,7 @@ export default function WeeklyForecast() {
                 <img 
                   src={`https://openweathermap.org/img/wn/${day.icon}@2x.png`} 
                   alt={day.condition} 
-                  className="w-12 h-12 lg:w-14 lg:h-14 drop-shadow-2xl relative z-10 invert dark:invert-0 grayscale brightness-[1.2]"
+                  className="w-12 h-12 lg:w-14 lg:h-14 drop-shadow-2xl relative z-10 invert dark:invert-0 brightness-[1.2]"
                 />
               </div>
               <div className="min-w-0">
@@ -85,13 +85,13 @@ export default function WeeklyForecast() {
                 <span className="text-2xl lg:typo-h2 leading-none">
                   {Math.round(convertTemp(day.maxTemp, settings.tempUnit))}°
                 </span>
-                <span className="text-[9px] lg:typo-label mt-1 lg:mt-2 text-[var(--text-main)] opacity-100">Peak</span>
+                <span className="text-[9px] lg:typo-label mt-1 lg:mt-2 text-amber-400 opacity-100">Peak</span>
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-xl lg:typo-h3 leading-none opacity-20">
                   {Math.round(convertTemp(day.minTemp, settings.tempUnit))}°
                 </span>
-                <span className="text-[9px] lg:typo-label mt-1 lg:mt-2">Dip</span>
+                <span className="text-[9px] lg:typo-label mt-1 lg:mt-2 text-sky-400">Dip</span>
               </div>
             </div>
           </motion.div>

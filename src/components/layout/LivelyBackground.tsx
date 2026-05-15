@@ -22,7 +22,7 @@ export default function LivelyBackground() {
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        className="absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-indigo-500/10 blur-[120px]"
+        className="absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-indigo-500/15 dark:bg-indigo-500/20 blur-[120px]"
       />
 
       {/* Secondary Blob */}
@@ -39,7 +39,7 @@ export default function LivelyBackground() {
           ease: "easeInOut",
           delay: 2,
         }}
-        className="absolute bottom-[-10%] right-[10%] w-[35vw] h-[35vw] rounded-full bg-pink-500/10 blur-[100px]"
+        className="absolute bottom-[-10%] right-[10%] w-[35vw] h-[35vw] rounded-full bg-violet-500/12 dark:bg-violet-500/18 blur-[100px]"
       />
 
       {/* Tertiary Blob */}
@@ -55,7 +55,7 @@ export default function LivelyBackground() {
           ease: "easeInOut",
           delay: 5,
         }}
-        className="absolute top-[30%] right-[15%] w-[25vw] h-[25vw] rounded-full bg-amber-500/10 blur-[90px]"
+        className="absolute top-[30%] right-[15%] w-[25vw] h-[25vw] rounded-full bg-cyan-500/10 dark:bg-cyan-500/15 blur-[90px]"
       />
 
       {/* Extra Lively Elements (small floating circles) */}

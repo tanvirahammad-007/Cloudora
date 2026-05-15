@@ -9,56 +9,56 @@ const getAQILevel = (aqi: number) => {
   // OpenWeatherMap AQI is 1-5
   switch (aqi) {
     case 1:
-      return { 
-        label: 'Pristine', 
-        color: 'text-[var(--text-main)]', 
-        bg: 'bg-[var(--text-main)]', 
-        description: 'Atmosphere is perfectly balanced.', 
+      return {
+        label: 'Pristine',
+        color: 'text-emerald-400',
+        bg: 'bg-emerald-500',
+        description: 'Atmosphere is perfectly balanced.',
         icon: ShieldCheck,
-        shadow: 'shadow-[var(--text-main)]/10'
+        shadow: 'shadow-emerald-500/10'
       };
     case 2:
-      return { 
-        label: 'Optimal', 
-        color: 'text-[var(--text-main)]/80', 
-        bg: 'bg-[var(--text-main)]/80', 
-        description: 'Quality is within safe parameters.', 
+      return {
+        label: 'Optimal',
+        color: 'text-green-400',
+        bg: 'bg-green-500',
+        description: 'Quality is within safe parameters.',
         icon: ShieldCheck,
-        shadow: 'shadow-[var(--text-main)]/10'
+        shadow: 'shadow-green-500/10'
       };
     case 3:
-      return { 
-        label: 'Moderate', 
-        color: 'text-[var(--text-main)]/60', 
-        bg: 'bg-[var(--text-main)]/60', 
-        description: 'Nominal pollution detected.', 
+      return {
+        label: 'Moderate',
+        color: 'text-amber-400',
+        bg: 'bg-amber-500',
+        description: 'Nominal pollution detected.',
         icon: Info,
-        shadow: 'shadow-[var(--text-main)]/10'
+        shadow: 'shadow-amber-500/10'
       };
     case 4:
-      return { 
-        label: 'Degraded', 
-        color: 'text-[var(--text-main)]/40', 
-        bg: 'bg-[var(--text-main)]/40', 
-        description: 'System alert: Sensitive risk.', 
+      return {
+        label: 'Degraded',
+        color: 'text-orange-400',
+        bg: 'bg-orange-500',
+        description: 'System alert: Sensitive risk.',
         icon: AlertTriangle,
-        shadow: 'shadow-[var(--text-main)]/10'
+        shadow: 'shadow-orange-500/10'
       };
     case 5:
-      return { 
-        label: 'Critical', 
-        color: 'text-[var(--text-main)]/20', 
-        bg: 'bg-[var(--text-main)]/20', 
-        description: 'Emergency: High toxicity.', 
+      return {
+        label: 'Critical',
+        color: 'text-red-400',
+        bg: 'bg-red-500',
+        description: 'Emergency: High toxicity.',
         icon: Zap,
-        shadow: 'shadow-[var(--text-main)]/10'
+        shadow: 'shadow-red-500/10'
       };
     default:
-      return { 
-        label: 'Unknown', 
-        color: 'text-white/40', 
-        bg: 'bg-white/40', 
-        description: 'Data unavailable.', 
+      return {
+        label: 'Unknown',
+        color: 'text-white/40',
+        bg: 'bg-white/40',
+        description: 'Data unavailable.',
         icon: Info,
         shadow: ''
       };
@@ -74,7 +74,7 @@ const AirQualitySkeleton = () => (
       </div>
       <div className="h-10 w-32 bg-white/5 rounded-full"></div>
     </div>
-    
+
     <div className="flex-1 flex flex-col justify-center mb-12">
       <div className="flex flex-col md:flex-row items-center gap-12">
         <div className="h-40 w-40 bg-white/5 rounded-3xl"></div>
@@ -112,14 +112,14 @@ export default function AirQuality() {
   const StatusIcon = aqiInfo.icon;
 
   const metrics = [
-    { label: 'PM2.5', value: weather.aqi.pm25, unit: 'μg/m³', desc: 'Optimal', color: 'from-[var(--text-main)]/20 to-[var(--text-main)]/10' },
-    { label: 'PM10', value: weather.aqi.pm10, unit: 'μg/m³', desc: 'Acceptable', color: 'from-[var(--text-main)]/15 to-[var(--text-main)]/5' },
-    { label: 'CO', value: Math.round(weather.aqi.co), unit: 'μg/m³', desc: 'Standard', color: 'from-[var(--text-main)]/10 to-[var(--text-main)]/5' },
-    { label: 'NO2', value: Math.round(weather.aqi.no2), unit: 'μg/m³', desc: 'Critical', color: 'from-[var(--text-main)]/5 to-transparent' },
+    { label: 'PM2.5', value: weather.aqi.pm25, unit: 'μg/m³', desc: 'Optimal', color: 'from-sky-500/20 to-sky-500/5' },
+    { label: 'PM10', value: weather.aqi.pm10, unit: 'μg/m³', desc: 'Acceptable', color: 'from-emerald-500/15 to-emerald-500/5' },
+    { label: 'CO', value: Math.round(weather.aqi.co), unit: 'μg/m³', desc: 'Standard', color: 'from-amber-500/10 to-amber-500/5' },
+    { label: 'NO2', value: Math.round(weather.aqi.no2), unit: 'μg/m³', desc: 'Critical', color: 'from-rose-500/10 to-rose-500/5' },
   ];
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
@@ -128,7 +128,7 @@ export default function AirQuality() {
       {/* Background Image with Enhanced Overlay */}
       <AnimatePresence mode="wait">
         {bgImage && (
-          <motion.div 
+          <motion.div
             key={bgImage}
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.2 }}
@@ -136,10 +136,10 @@ export default function AirQuality() {
             transition={{ duration: 3, ease: "easeInOut" }}
             className="absolute inset-0 z-0"
           >
-            <img 
-              src={bgImage} 
-              alt="Air Quality Background" 
-              className="w-full h-full object-cover grayscale brightness-110 contrast-110"
+            <img
+              src={bgImage}
+              alt="Air Quality Background"
+              className="w-full h-full object-cover brightness-110 saturate-[1.2] contrast-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-color)] via-[var(--bg-color)]/80 to-transparent"></div>
           </motion.div>
@@ -149,12 +149,12 @@ export default function AirQuality() {
       <div className="relative z-10 flex flex-col h-full">
         <div className="flex justify-between items-center mb-[var(--spacing-gap-lg)]">
           <div className="flex items-center gap-4">
-            <div className="p-4 rounded-[1.25rem] bg-[var(--text-main)] text-[var(--bg-color)] shadow-2xl">
+            <div className="p-4 rounded-[1.25rem] bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-2xl shadow-emerald-500/20">
               <Activity size={24} strokeWidth={1.5} className="animate-pulse" />
             </div>
             <h4 className="typo-h3">Air Integrity</h4>
           </div>
-          <motion.div 
+          <motion.div
             whileHover={{ scale: 1.05 }}
             className={cn(
               "px-6 py-2.5 rounded-full border border-current backdrop-blur-xl transition-all duration-500",
@@ -164,7 +164,7 @@ export default function AirQuality() {
             <span className="typo-label opacity-100">{aqiInfo.label}</span>
           </motion.div>
         </div>
-        
+
         <div className="flex-1 flex flex-col justify-center mb-[var(--spacing-gap-lg)]">
           <div className="flex flex-col md:flex-row items-center gap-12 text-center md:text-left">
             <div className="relative group/aqi">
@@ -183,7 +183,7 @@ export default function AirQuality() {
           </div>
 
           <div className="w-full h-4 bg-[var(--text-main)]/5 rounded-full overflow-hidden mt-12 relative border border-[var(--border-color)] p-0.5">
-            <motion.div 
+            <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${Math.min((weather.aqi.us / 500) * 100, 100)}%` }}
               transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
@@ -198,7 +198,7 @@ export default function AirQuality() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-[var(--spacing-gap-sm)] mt-auto">
           {metrics.map((m, i) => (
-            <motion.div 
+            <motion.div
               key={m.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -207,7 +207,7 @@ export default function AirQuality() {
             >
               <div className="flex items-center justify-between">
                 <span className="typo-label tracking-tighter">{m.label}</span>
-                <div className={cn("w-1.5 h-1.5 rounded-full", i === 0 ? "bg-[var(--text-main)] shadow-[0_0_8px_var(--text-main)]" : "bg-[var(--text-main)]/10")}></div>
+                <div className={cn("w-1.5 h-1.5 rounded-full", i === 0 ? "bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.6)]" : i === 1 ? "bg-emerald-400/40" : i === 2 ? "bg-amber-400/40" : "bg-rose-400/40")}></div>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="typo-h3 text-2xl">{m.value}</span>

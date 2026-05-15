@@ -25,7 +25,7 @@ export default function RightPanel({ className }: RightPanelProps) {
       {/* Recent Searches */}
       <div className="glass-panel p-[var(--spacing-gap-md)] flex flex-col rounded-[3rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/80 h-[45%] group">
         <div className="flex items-center gap-4 mb-8">
-          <div className="p-3.5 rounded-2xl bg-[var(--text-main)] text-[var(--bg-color)] shadow-2xl">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-2xl shadow-indigo-500/20">
             <History size={18} strokeWidth={2.5} />
           </div>
           <h3 className="typo-label opacity-100">Synchronized Logs</h3>
@@ -83,7 +83,7 @@ export default function RightPanel({ className }: RightPanelProps) {
               <img 
                 src={geoBg} 
                 alt="Country Background" 
-                className="w-full h-full object-cover grayscale brightness-125 transition-transform duration-[40s] ease-linear"
+                className="w-full h-full object-cover brightness-110 saturate-[1.3] contrast-[1.1] transition-transform duration-[40s] ease-linear"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-color)] via-[var(--bg-color)]/90 to-transparent"></div>
             </motion.div>
@@ -91,7 +91,7 @@ export default function RightPanel({ className }: RightPanelProps) {
         </AnimatePresence>
 
         <div className="flex items-center gap-4 mb-8 relative z-10">
-          <div className="p-3.5 rounded-2xl bg-[var(--text-main)] text-[var(--bg-color)] shadow-2xl">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-2xl shadow-sky-500/20">
             <Globe size={18} strokeWidth={2.5} />
           </div>
           <h4 className="typo-label opacity-100">Global Metrics</h4>

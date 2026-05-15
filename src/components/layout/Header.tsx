@@ -8,9 +8,13 @@ import { cn } from '../../lib/utils';
 import ThemeToggle from './ThemeToggle';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { getCountryName } from '../../lib/geoUtils';
+import { useTranslation } from '../../hooks/useTranslation';
+
 
 export default function Header() {
+  const { t } = useTranslation();
   const { weather, fetchWeather, addToHistory, loading: weatherLoading } = useWeather();
+
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<CitySuggestion[]>([]);
@@ -86,19 +90,21 @@ export default function Header() {
           </div>
           <div className="hidden sm:flex flex-col">
             <span className="text-lg lg:text-xl font-black tracking-widest uppercase text-[var(--text-main)] leading-none">Cloudora</span>
-            <span className="text-[9px] lg:text-[10px] font-bold tracking-[0.2em] uppercase text-[var(--text-muted)] mt-1 opacity-60">Climate Network</span>
+            <span className="text-[9px] lg:text-[10px] font-bold tracking-[0.2em] uppercase text-[var(--text-muted)] mt-1 opacity-60">Laggy Clouds</span>
           </div>
+
         </NavLink>
 
         <div className="hidden md:flex items-center gap-3 py-2 text-[var(--text-main)] shrink-0">
           <MapPin size={18} className="text-[var(--text-main)] opacity-70" />
           <div className="flex flex-col">
             <span className="text-sm lg:text-base font-black tracking-tight leading-tight">
-              {weather?.location.name || 'Set Location'}
+              {weather?.location.name || t('setLocation')}
             </span>
             <span className="text-[10px] lg:text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] opacity-50">
-              {weather?.location.country ? getCountryName(weather.location.country) : 'Global'}
+              {weather?.location.country ? getCountryName(weather.location.country) : t('global')}
             </span>
+
           </div>
         </div>
       </div>
@@ -113,18 +119,19 @@ export default function Header() {
             showSuggestions && suggestions.length > 0 ? "rounded-b-none rounded-t-[1.5rem] lg:rounded-t-[2rem]" : ""
           )}>
             <div className="pr-2 lg:pr-3 flex items-center justify-center">
-               {isSearching ? (
-                 <Loader2 className="animate-spin text-[var(--text-main)]" size={18} />
-               ) : (
-                 <Search className="text-[var(--text-muted)] group-focus-within:text-[var(--text-main)] transition-colors" size={18} />
-               )}
+              {isSearching ? (
+                <Loader2 className="animate-spin text-[var(--text-main)]" size={18} />
+              ) : (
+                <Search className="text-[var(--text-muted)] group-focus-within:text-[var(--text-main)] transition-colors" size={18} />
+              )}
             </div>
-            
+
             <input
               ref={inputRef}
               type="text"
-              placeholder="Explore locations..."
+              placeholder={t('exploreLocations')}
               value={query}
+
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -149,7 +156,7 @@ export default function Header() {
 
             <AnimatePresence>
               {query && (
-                <motion.button 
+                <motion.button
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
@@ -172,8 +179,9 @@ export default function Header() {
                 className="absolute top-full left-0 w-full bg-[var(--bg-color)] border border-[var(--border-color)] rounded-[1.5rem] lg:rounded-[2rem] overflow-hidden z-[100] shadow-2xl p-2 lg:p-3"
               >
                 <div className="px-3 py-2 mb-1 flex items-center justify-between opacity-50">
-                  <span className="typo-xs font-black uppercase tracking-widest">Global Index</span>
+                  <span className="typo-xs font-black uppercase tracking-widest">{t('globalIndex')}</span>
                 </div>
+
                 <div className="max-h-[300px] lg:max-h-[400px] overflow-y-auto hide-scrollbar space-y-1">
                   {suggestions.map((suggestion, idx) => (
                     <motion.button
@@ -192,8 +200,8 @@ export default function Header() {
                       <div className="flex items-center gap-3 lg:gap-4 min-w-0">
                         <div className={cn(
                           "w-10 h-10 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center transition-all duration-500 shrink-0",
-                          selectedIndex === idx 
-                            ? "bg-[var(--text-main)] text-[var(--bg-color)] shadow-lg" 
+                          selectedIndex === idx
+                            ? "bg-[var(--text-main)] text-[var(--bg-color)] shadow-lg"
                             : "bg-[var(--text-main)]/[0.05] border border-[var(--border-color)] text-[var(--text-main)]"
                         )}>
                           <MapPin size={16} lg:size={20} className={cn(selectedIndex === idx && "animate-bounce")} />
@@ -212,12 +220,12 @@ export default function Header() {
                           </p>
                         </div>
                       </div>
-                      <Sparkles 
+                      <Sparkles
                         size={14} lg:size={16}
                         className={cn(
                           "transition-all duration-500 shrink-0",
                           selectedIndex === idx ? "text-[var(--text-main)] opacity-100 scale-125" : "text-[var(--text-main)] opacity-10"
-                        )} 
+                        )}
                       />
                     </motion.button>
                   ))}
@@ -236,11 +244,11 @@ export default function Header() {
         </button>
 
         <ThemeToggle />
-        
+
         <NavLink to="/profile" className="relative group shrink-0">
           <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full overflow-hidden border-2 border-white/10 shadow-lg active:scale-95 transition-all cursor-pointer group-hover:border-[var(--text-main)]/50">
-            <img 
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(weather?.location.name || 'User')}`} 
+            <img
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(weather?.location.name || 'User')}`}
               alt="User"
               className="w-full h-full object-cover bg-white/5"
             />
