@@ -27,6 +27,7 @@ interface TravelPlanCardProps {
 
 export default function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) {
   const { settings } = useSettings();
+  const isBangla = settings.language === 'bn';
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-emerald-500';
@@ -52,14 +53,14 @@ export default function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) 
   const dayCount = Math.ceil((new Date(plan.endDate).getTime() - new Date(plan.startDate).getTime()) / (1000 * 60 * 60 * 24)) || 1;
 
   return (
-    <div
-      className="glass-panel overflow-hidden rounded-[3rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/60 hover:bg-[var(--panel-bg)] transition-all group shadow-xl h-full"
-    >
+    <article className="glass-panel overflow-hidden rounded-[2.5rem] lg:rounded-[3rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/60 hover:bg-[var(--panel-bg)] transition-all group shadow-xl h-full">
       <div className="relative h-48 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-color)] to-transparent z-10" />
         <img 
           src={`https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=800`} 
           alt={plan.city.name}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
         />
         <div className="absolute top-6 right-6 z-20 flex gap-2">
@@ -74,7 +75,7 @@ export default function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) 
         </div>
       </div>
 
-      <div className="p-8 space-y-8">
+      <div className="p-6 sm:p-8 space-y-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-indigo-500/10 text-indigo-500 rounded-2xl">
@@ -84,7 +85,9 @@ export default function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) 
               <p className="text-xs font-bold text-[var(--text-main)]">
                 {new Date(plan.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(plan.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
-              <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">{dayCount} Days Expedition</p>
+              <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">
+                {isBangla ? `${dayCount} দিনের ভ্রমণ` : `${dayCount} day trip`}
+              </p>
             </div>
           </div>
           <p className="text-[9px] font-black bg-[var(--text-main)]/[0.05] border border-[var(--border-color)] px-3 py-1.5 rounded-full uppercase tracking-widest">{plan.climateType}</p>
@@ -96,10 +99,10 @@ export default function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) 
               <Thermometer size={16} className="text-orange-500" />
               <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Thermal Average</span>
             </div>
-            <p className="text-3xl font-black tracking-tight">{convertTemp(plan.weatherSummary.avgTemp, settings.tempUnit)}°{settings.tempUnit}</p>
+            <p className="text-3xl font-black tracking-tight">{Math.round(convertTemp(plan.weatherSummary.avgTemp, settings.tempUnit))}°{settings.tempUnit}</p>
             <div className="mt-2 flex items-center justify-between opacity-30 text-[9px] font-bold">
-               <span>L: {convertTemp(plan.weatherSummary.minTemp, settings.tempUnit)}°</span>
-               <span>H: {convertTemp(plan.weatherSummary.maxTemp, settings.tempUnit)}°</span>
+               <span>L: {Math.round(convertTemp(plan.weatherSummary.minTemp, settings.tempUnit))}°</span>
+               <span>H: {Math.round(convertTemp(plan.weatherSummary.maxTemp, settings.tempUnit))}°</span>
             </div>
           </div>
 
@@ -184,6 +187,8 @@ export default function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) 
         <div className="flex items-center justify-between pt-6 border-t border-[var(--border-color)]">
           <button 
             onClick={() => onDelete(plan.id)}
+            type="button"
+            aria-label={`Delete trip plan for ${plan.city.name}`}
             className="flex items-center gap-2 text-red-500 hover:text-white hover:bg-red-500 px-5 py-3 rounded-2xl transition-all text-[9px] font-black uppercase tracking-widest"
           >
             <Trash2 size={14} />
@@ -196,6 +201,6 @@ export default function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) 
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

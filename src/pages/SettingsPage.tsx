@@ -19,13 +19,13 @@ import {
   Layout,
   Map,
   Volume2,
+  VolumeX,
   Navigation
 } from 'lucide-react';
 import { useSettings, TemperatureUnit, WindSpeedUnit, BlurIntensity, Language } from '../context/SettingsContext';
 import { useWeather } from '../context/WeatherContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { cn } from '../lib/utils';
-import { useState } from 'react';
 
 
 export default function SettingsPage() {
@@ -68,9 +68,9 @@ export default function SettingsPage() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="flex-1 p-4 sm:p-6 h-full overflow-y-auto custom-scrollbar"
+      className="premium-page"
     >
-      <div className="max-w-4xl mx-auto space-y-10 pb-20">
+      <div className="premium-page-inner max-w-4xl space-y-10">
         {/* Header */}
         <div className="flex items-center gap-6 mb-12">
           <div className="p-4 rounded-[2rem] bg-[var(--text-main)]/[0.05] text-[var(--text-main)] border border-[var(--border-color)]">
@@ -188,17 +188,59 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <NotificationToggle 
                     icon={Cloud}
-                    label="Precipitation"
+                    label="Rain alerts"
                     description="Rain and snow alerts"
                     checked={settings.rainAlerts}
                     onChange={(val) => updateSettings({ rainAlerts: val })}
                   />
                   <NotificationToggle 
                     icon={Zap}
-                    label="Storm Tracking"
+                    label="Storm alerts"
                     description="Severe storm warnings"
                     checked={settings.stormAlerts}
                     onChange={(val) => updateSettings({ stormAlerts: val })}
+                  />
+                  <NotificationToggle
+                    icon={Activity}
+                    label="AQI alerts"
+                    description="Air quality warnings"
+                    checked={settings.aqiAlerts}
+                    onChange={(val) => updateSettings({ aqiAlerts: val })}
+                  />
+                  <NotificationToggle
+                    icon={Thermometer}
+                    label="Temperature alerts"
+                    description="Big temperature changes"
+                    checked={settings.temperatureAlerts}
+                    onChange={(val) => updateSettings({ temperatureAlerts: val })}
+                  />
+                  <NotificationToggle
+                    icon={Sun}
+                    label="Sun reminders"
+                    description="Sunrise and sunset reminders"
+                    checked={settings.sunReminderAlerts}
+                    onChange={(val) => updateSettings({ sunReminderAlerts: val })}
+                  />
+                  <NotificationToggle
+                    icon={Bell}
+                    label="Daily summary"
+                    description="One weather summary each day"
+                    checked={settings.dailySummaryAlerts}
+                    onChange={(val) => updateSettings({ dailySummaryAlerts: val })}
+                  />
+                  <NotificationToggle
+                    icon={Map}
+                    label="Saved cities"
+                    description="Alerts for saved places"
+                    checked={settings.savedCityAlerts}
+                    onChange={(val) => updateSettings({ savedCityAlerts: val })}
+                  />
+                  <NotificationToggle
+                    icon={settings.notificationSoundEnabled ? Volume2 : VolumeX}
+                    label="Sound"
+                    description="Soft alert sound"
+                    checked={settings.notificationSoundEnabled}
+                    onChange={(val) => updateSettings({ notificationSoundEnabled: val })}
                   />
                 </div>
                 
@@ -235,6 +277,8 @@ export default function SettingsPage() {
             <SectionHeader title="Storage Context" />
             <button 
               onClick={clearHistory}
+              type="button"
+              disabled={searchHistory.length === 0}
               className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-white hover:bg-red-500 px-4 py-2 rounded-full border border-red-500/20 transition-all"
             >
               <Trash2 size={12} />
@@ -273,6 +317,8 @@ export default function SettingsPage() {
                       </div>
                       <button 
                         onClick={() => removeFromHistory(city.lat, city.lon)}
+                        type="button"
+                        aria-label={`Remove ${city.name} from search history`}
                         className="p-3 rounded-xl hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-500 transition-all"
                       >
                         <Trash2 size={16} />
@@ -304,6 +350,15 @@ function ToggleSetting({ icon: Icon, label, description, checked, onChange }: an
     <div 
       className="glass-panel p-6 rounded-[2.5rem] border border-[var(--border-color)] flex items-center justify-between group hover:border-[var(--text-main)]/20 transition-all cursor-pointer"
       onClick={() => onChange(!checked)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onChange(!checked);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-pressed={checked}
     >
       <div className="flex items-center gap-5">
         <div className="p-3.5 rounded-2xl bg-[var(--text-main)]/[0.05] text-[var(--text-muted)] group-hover:text-indigo-500 transition-colors border border-[var(--border-color)]">
@@ -338,7 +393,9 @@ function SelectorSetting({ icon: Icon, label, description, options, activeValue,
         {options.map((opt: any) => (
           <button
             key={opt.value}
+            type="button"
             onClick={() => onChange(opt.value)}
+            aria-pressed={activeValue === opt.value}
             className={cn(
               "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
               activeValue === opt.value
@@ -356,8 +413,11 @@ function SelectorSetting({ icon: Icon, label, description, options, activeValue,
 
 function ToggleSwitch({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) {
   return (
-    <div 
+    <button
+      type="button"
       onClick={(e) => { e.stopPropagation(); onChange(!checked); }}
+      role="switch"
+      aria-checked={checked}
       className={cn(
         "relative w-12 h-6 rounded-full p-1 transition-colors duration-300 cursor-pointer",
         checked ? "bg-indigo-500" : "bg-[var(--text-main)]/10"
@@ -368,14 +428,14 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean, onChange: (val:
         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         className="w-4 h-4 bg-white rounded-full shadow-sm"
       />
-    </div>
+    </button>
   );
 }
 
 function NotificationToggle({ icon: Icon, label, description, checked, onChange }: any) {
   return (
-    <div className="flex items-center justify-between p-5 rounded-3xl bg-[var(--text-main)]/[0.02] border border-[var(--border-color)]">
-      <div className="flex items-center gap-4">
+    <div className="flex items-center justify-between gap-4 p-5 rounded-3xl bg-[var(--text-main)]/[0.02] border border-[var(--border-color)]">
+      <div className="flex min-w-0 items-center gap-4">
         <div className="p-2.5 rounded-xl bg-[var(--text-main)]/[0.05] text-indigo-500">
           <Icon size={16} />
         </div>
@@ -409,6 +469,7 @@ function ThresholdControl({ icon: Icon, label, value, min, max, unit, onChange, 
           max={max} 
           value={value} 
           onChange={(e) => onChange(parseInt(e.target.value))}
+          aria-label={label}
           className="w-full h-1.5 bg-[var(--text-main)]/5 rounded-full appearance-none cursor-pointer accent-indigo-500 focus:outline-none"
         />
         <div className="flex justify-between mt-2">

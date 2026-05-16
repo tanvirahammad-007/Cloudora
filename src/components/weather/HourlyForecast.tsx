@@ -1,6 +1,10 @@
 import { useWeather } from '../../context/WeatherContext';
+import { useSettings } from '../../context/SettingsContext';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'motion/react';
+import { convertTemp } from '../../lib/unitUtils';
+import ErrorStateCard from '../errors/ErrorStateCard';
+import SafeImage from '../common/SafeImage';
 
 const HourlyForecastSkeleton = () => (
   <div className="glass-panel p-10 flex flex-col rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] h-full min-h-[360px] animate-pulse">
@@ -25,14 +29,29 @@ const HourlyForecastSkeleton = () => (
 );
 
 export default function HourlyForecast() {
-  const { weather, loading } = useWeather();
+  const { weather, loading, retryFetchWeather } = useWeather();
+  const { settings } = useSettings();
 
   if (loading && !weather) return <HourlyForecastSkeleton />;
   if (!weather) return null;
 
+  if (weather.hourly.length === 0) {
+    return (
+      <ErrorStateCard
+        kind="forecast-unavailable"
+        title={settings.language === 'bn' ? 'ঘন্টার পূর্বাভাস পাওয়া যায়নি' : 'Hourly forecast is unavailable'}
+        message={settings.language === 'bn' ? 'ঘন্টার আবহাওয়া এখন পাওয়া যাচ্ছে না। বর্তমান আবহাওয়া ঠিক আছে।' : 'Hourly details did not arrive. Current weather is still available.'}
+        actionLabel={settings.language === 'bn' ? 'আবার চেষ্টা করুন' : 'Retry forecast'}
+        onRetry={retryFetchWeather}
+        compact
+        className="h-full min-h-[360px]"
+      />
+    );
+  }
+
   const chartData = weather.hourly.map(h => ({
     time: new Date(h.time).getHours() + ':00',
-    temp: h.temp,
+    temp: Math.round(convertTemp(h.temp, settings.tempUnit)),
   }));
 
   const formatTime = (timeStr: string) => {
@@ -41,7 +60,7 @@ export default function HourlyForecast() {
   };
 
   return (
-    <div className="glass-panel p-[var(--spacing-gap-md)] flex flex-col rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/80 h-full min-h-[360px] group transition-all duration-700 hover:shadow-2xl hover:shadow-[var(--text-main)]/5 relative overflow-hidden">
+    <section aria-label="Hourly forecast" className="glass-panel p-[var(--spacing-gap-md)] flex flex-col rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/80 h-full min-h-[360px] group transition-all duration-700 hover:shadow-2xl hover:shadow-[var(--text-main)]/5 relative overflow-hidden">
       <div className="flex items-center justify-between mb-[var(--spacing-gap-md)]">
         <div>
           <h3 className="typo-label mb-1">Forecast Cycles</h3>
@@ -52,26 +71,29 @@ export default function HourlyForecast() {
         </div>
       </div>
       
-      <div className="flex gap-[var(--spacing-gap-md)] overflow-x-auto pb-8 custom-scrollbar -mx-4 px-4 z-10 relative">
+      <div className="flex gap-[var(--spacing-gap-md)] overflow-x-auto pb-8 custom-scrollbar -mx-4 px-4 z-10 relative" role="list" aria-label="Hourly weather cards">
         {weather.hourly.map((h, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.02 }}
-            className="flex flex-col items-center justify-between min-w-[110px] p-8 rounded-[3rem] bg-[var(--text-main)]/[0.02] border border-[var(--border-color)] hover:bg-[var(--text-main)]/[0.04] hover:border-[var(--text-main)]/20 transition-all duration-500 cursor-default group/item"
+            className="flex flex-col items-center justify-between min-w-[104px] sm:min-w-[110px] p-6 sm:p-8 rounded-[2.5rem] sm:rounded-[3rem] bg-[var(--text-main)]/[0.02] border border-[var(--border-color)] hover:bg-[var(--text-main)]/[0.04] hover:border-[var(--text-main)]/20 transition-all duration-500 cursor-default group/item"
+            role="listitem"
           >
             <span className="typo-label tracking-tighter opacity-30 group-hover/item:opacity-100 transition-all">
               {formatTime(h.time)}
             </span>
             <div className="relative group-hover:scale-110 transition-transform duration-700 my-4">
-              <img 
+              <SafeImage 
                 src={`https://openweathermap.org/img/wn/${h.icon}@2x.png`} 
                 alt={h.condition}
+                loading="lazy"
+                decoding="async"
                 className="w-14 h-14 drop-shadow-xl relative z-10 invert dark:invert-0 brightness-[1.2]"
               />
             </div>
-            <span className="typo-h3 leading-none">{h.temp}°</span>
+            <span className="typo-h3 leading-none">{Math.round(convertTemp(h.temp, settings.tempUnit))}°</span>
           </motion.div>
         ))}
       </div>
@@ -115,6 +137,6 @@ export default function HourlyForecast() {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </section>
   );
 }

@@ -6,8 +6,8 @@ interface MapLegendProps {
 
 export default function MapLegend({ items }: MapLegendProps) {
   return (
-    <div className="absolute bottom-8 right-8 z-10 flex flex-col gap-4">
-      <div className="glass p-6 rounded-[2rem] border border-white/20 backdrop-blur-[12px] shadow-2xl max-w-[240px]">
+    <div className="absolute bottom-4 left-4 right-4 z-10 flex justify-end sm:bottom-8 sm:left-auto sm:right-8">
+      <div className="glass w-full max-w-[240px] p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-white/20 backdrop-blur-[12px] shadow-2xl">
         <h4 className="text-xs font-black uppercase tracking-widest text-indigo-500 mb-4">Legend</h4>
         <div className="space-y-3">
           {items.map((item, i) => (

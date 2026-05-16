@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { CitySuggestion } from '../types/weather';
 
 export interface UserProfile {
@@ -48,11 +48,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('cloudora-user-profile', JSON.stringify(profile));
   }, [profile]);
 
-  const updateProfile = (updates: Partial<UserProfile>) => {
+  const updateProfile = useCallback((updates: Partial<UserProfile>) => {
     setProfile(prev => ({ ...prev, ...updates }));
-  };
+  }, []);
 
-  const toggleFavorite = (city: CitySuggestion) => {
+  const toggleFavorite = useCallback((city: CitySuggestion) => {
     setProfile(prev => {
       const exists = prev.favorites.some(f => f.lat === city.lat && f.lon === city.lon);
       if (exists) {
@@ -67,18 +67,26 @@ export function UserProvider({ children }: { children: ReactNode }) {
         };
       }
     });
-  };
+  }, []);
 
-  const isFavorite = (lat: number, lon: number) => {
+  const isFavorite = useCallback((lat: number, lon: number) => {
     return profile.favorites.some(f => f.lat === lat && f.lon === lon);
-  };
+  }, [profile.favorites]);
 
-  const reorderFavorites = (newFavorites: CitySuggestion[]) => {
+  const reorderFavorites = useCallback((newFavorites: CitySuggestion[]) => {
     setProfile(prev => ({ ...prev, favorites: newFavorites }));
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    profile,
+    updateProfile,
+    toggleFavorite,
+    isFavorite,
+    reorderFavorites,
+  }), [profile, updateProfile, toggleFavorite, isFavorite, reorderFavorites]);
 
   return (
-    <UserContext.Provider value={{ profile, updateProfile, toggleFavorite, isFavorite, reorderFavorites }}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );

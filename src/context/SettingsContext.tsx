@@ -14,6 +14,12 @@ export interface AppSettings {
   dynamicBackground: boolean;
   compactMode: boolean;
   notificationsEnabled: boolean;
+  notificationSoundEnabled: boolean;
+  aqiAlerts: boolean;
+  temperatureAlerts: boolean;
+  sunReminderAlerts: boolean;
+  dailySummaryAlerts: boolean;
+  savedCityAlerts: boolean;
   language: Language;
   autoLocation: boolean;
   aqiThreshold: number;
@@ -39,6 +45,12 @@ const defaultSettings: AppSettings = {
   dynamicBackground: true,
   compactMode: false,
   notificationsEnabled: true,
+  notificationSoundEnabled: true,
+  aqiAlerts: true,
+  temperatureAlerts: true,
+  sunReminderAlerts: true,
+  dailySummaryAlerts: true,
+  savedCityAlerts: true,
   language: 'en',
   autoLocation: true,
   aqiThreshold: 100,
@@ -73,7 +85,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
     setSettingsState((prev) => {
       const updated = { ...prev, ...newSettings };
-      localStorage.setItem('cloudora-settings', JSON.stringify(updated));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cloudora-settings', JSON.stringify(updated));
+      }
       return updated;
     });
   }, []);
@@ -113,8 +127,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       root.style.setProperty('--spacing-gap-xl', '2.5rem');
     } else {
       root.classList.remove('compact-mode');
-      // Reset is handled by the base CSS or we could revert to defaults
-      // But better to just toggle a class and let CSS handle it
+      root.style.removeProperty('--spacing-gap-sm');
+      root.style.removeProperty('--spacing-gap-md');
+      root.style.removeProperty('--spacing-gap-lg');
+      root.style.removeProperty('--spacing-gap-xl');
     }
   }, [settings.compactMode]);
 

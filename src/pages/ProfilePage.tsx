@@ -17,10 +17,10 @@ import {
   History,
   TrendingUp,
   Layout,
-  ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
-import { useUser, UserProfile } from '../context/UserContext';
+import { useUser } from '../context/UserContext';
 import { useWeather } from '../context/WeatherContext';
 import { useSettings } from '../context/SettingsContext';
 import { cn } from '../lib/utils';
@@ -34,22 +34,31 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(profile);
+  const isBangla = settings.language === 'bn';
 
   const handleSave = () => {
     updateProfile(editForm);
     setIsEditing(false);
   };
 
-  const lastCity = searchHistory[0];
+  const startEditing = () => {
+    setEditForm(profile);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditForm(profile);
+    setIsEditing(false);
+  };
 
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="flex-1 p-4 sm:p-6 lg:p-8 h-full overflow-y-auto custom-scrollbar"
+      className="premium-page"
     >
-      <div className="max-w-6xl mx-auto space-y-8 pb-20">
+      <div className="premium-page-inner max-w-6xl space-y-8">
         
         {/* Profile Identity Card */}
         <div className="glass-panel relative overflow-hidden rounded-[4rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/80 group">
@@ -63,12 +72,15 @@ export default function ProfilePage() {
                 <div className="w-32 h-32 md:w-44 md:h-44 rounded-[3.5rem] overflow-hidden border-4 border-white/10 shadow-2xl transition-all duration-700 group-hover/avatar:scale-105 group-hover/avatar:border-[var(--text-main)]/30">
                   <img 
                     src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(profile.avatarSeed)}`}
-                    alt="User Profile"
+                    alt="User profile avatar"
+                    decoding="async"
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <button 
-                  onClick={() => setIsEditing(true)}
+                  type="button"
+                  onClick={startEditing}
+                  aria-label="Edit avatar"
                   className="absolute bottom-2 right-2 p-3 bg-[var(--text-main)] text-[var(--bg-color)] rounded-2xl shadow-xl active:scale-95 transition-all opacity-0 group-hover/avatar:opacity-100"
                 >
                   <Camera size={18} />
@@ -101,14 +113,17 @@ export default function ProfilePage() {
 
               <div className="flex gap-3">
                 <button 
-                  onClick={() => setIsEditing(true)}
+                  type="button"
+                  onClick={startEditing}
                   className="px-8 py-4 glass rounded-[1.5rem] typo-label opacity-100 flex items-center gap-3 hover:bg-[var(--text-main)]/5 active:scale-95 transition-all"
                 >
                   <Edit3 size={16} />
                   Modify Profile
                 </button>
                 <button 
+                  type="button"
                   onClick={() => navigate('/settings')}
+                  aria-label="Open settings"
                   className="p-4 glass rounded-[1.5rem] hover:bg-[var(--text-main)]/5 active:scale-95 transition-all"
                 >
                   <Settings size={18} />
@@ -156,6 +171,7 @@ export default function ProfilePage() {
                     </div>
                  </div>
                  <button 
+                  type="button"
                   onClick={() => navigate('/')}
                   className="w-full mt-8 py-3 glass rounded-full typo-label text-[10px] hover:bg-[var(--text-main)]/5 transition-all"
                  >
@@ -190,9 +206,19 @@ export default function ProfilePage() {
                     >
                       <div 
                         className="flex items-center gap-4 flex-1"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Open weather for ${city.name}`}
                         onClick={() => {
                           fetchWeather(city.lat, city.lon, city.name);
                           navigate('/');
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            fetchWeather(city.lat, city.lon, city.name);
+                            navigate('/');
+                          }
                         }}
                       >
                          <div className="w-12 h-12 rounded-xl bg-[var(--text-main)]/[0.05] flex items-center justify-center text-[var(--text-muted)] group-hover:text-red-500 transition-colors">
@@ -208,6 +234,8 @@ export default function ProfilePage() {
                           e.stopPropagation();
                           toggleFavorite(city);
                         }}
+                        type="button"
+                        aria-label={`Remove ${city.name} from saved cities`}
                         className="p-3 rounded-xl hover:bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-all"
                       >
                         <Trash2 size={16} />
@@ -233,26 +261,43 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-3">
-                {searchHistory.slice(0, 5).map((city, idx) => (
-                  <div 
-                    key={`${city.lat}-${city.lon}-${idx}`}
-                    className="flex items-center justify-between p-4 rounded-2xl hover:bg-[var(--text-main)]/[0.02] transition-colors border border-transparent hover:border-[var(--border-color)] group/log cursor-pointer"
-                    onClick={() => {
-                        fetchWeather(city.lat, city.lon, city.name);
-                        navigate('/');
+                {searchHistory.length > 0 ? (
+                  searchHistory.slice(0, 5).map((city, idx) => (
+                    <div
+                      key={`${city.lat}-${city.lon}-${idx}`}
+                      className="flex items-center justify-between p-4 rounded-2xl hover:bg-[var(--text-main)]/[0.02] transition-colors border border-transparent hover:border-[var(--border-color)] group/log cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Open weather for ${city.name}`}
+                      onClick={() => {
+                          fetchWeather(city.lat, city.lon, city.name);
+                          navigate('/');
+                        }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          fetchWeather(city.lat, city.lon, city.name);
+                          navigate('/');
+                        }
                       }}
-                  >
-                    <div className="flex items-center gap-4">
-                      <Clock size={14} className="opacity-20 group-hover/log:text-emerald-500 group-hover/log:opacity-100 transition-all" />
-                      <div>
-                        <span className="text-sm font-bold text-[var(--text-main)]">{city.name}</span>
-                        <span className="mx-2 opacity-10">|</span>
-                        <span className="text-[10px] opacity-30 uppercase font-black tracking-widest">{city.country}</span>
+                    >
+                      <div className="flex items-center gap-4">
+                        <Clock size={14} className="opacity-20 group-hover/log:text-emerald-500 group-hover/log:opacity-100 transition-all" />
+                        <div>
+                          <span className="text-sm font-bold text-[var(--text-main)]">{city.name}</span>
+                          <span className="mx-2 opacity-10">|</span>
+                          <span className="text-[10px] opacity-30 uppercase font-black tracking-widest">{city.country}</span>
+                        </div>
                       </div>
+                      <ChevronRight size={14} className="opacity-0 group-hover/log:opacity-20 group-hover/log:translate-x-1 transition-all" />
                     </div>
-                    <ChevronRight size={14} className="opacity-0 group-hover/log:opacity-20 group-hover/log:translate-x-1 transition-all" />
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-10 text-center opacity-20">
+                    <History size={42} className="mb-3" />
+                    <p className="typo-label tracking-tighter">{isBangla ? 'এখনো কোনো হিস্ট্রি নেই' : 'No recent searches yet'}</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
@@ -267,20 +312,23 @@ export default function ProfilePage() {
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
-               onClick={() => setIsEditing(false)}
+               onClick={cancelEditing}
                className="absolute inset-0 bg-black/60 backdrop-blur-md"
              />
              <motion.div 
                initial={{ scale: 0.9, opacity: 0, y: 20 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-               className="relative w-full max-w-lg glass-panel p-10 rounded-[3rem] border border-[var(--border-color)] bg-[var(--bg-color)] shadow-3xl"
+               role="dialog"
+               aria-modal="true"
+               aria-labelledby="profile-edit-title"
+               className="relative w-full max-w-lg glass-panel p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] border border-[var(--border-color)] bg-[var(--bg-color)] shadow-3xl"
              >
-               <h2 className="text-2xl font-black text-[var(--text-main)] mb-8 tracking-tight">Identity Adjustment</h2>
+               <h2 id="profile-edit-title" className="text-2xl font-black text-[var(--text-main)] mb-8 tracking-tight">{isBangla ? 'প্রোফাইল ঠিক করুন' : 'Edit profile'}</h2>
                
                <div className="space-y-6">
                  <div className="space-y-2">
-                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Display Alias</label>
+                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">{isBangla ? 'নাম' : 'Name'}</label>
                    <input 
                      type="text" 
                      value={editForm.name}
@@ -290,7 +338,7 @@ export default function ProfilePage() {
                  </div>
 
                  <div className="space-y-2">
-                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Sector Locale</label>
+                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">{isBangla ? 'জায়গা' : 'Place'}</label>
                    <input 
                      type="text" 
                      value={editForm.location}
@@ -300,7 +348,7 @@ export default function ProfilePage() {
                  </div>
 
                  <div className="space-y-2">
-                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Identity Seed (Avatar)</label>
+                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">{isBangla ? 'অ্যাভাটার নাম' : 'Avatar name'}</label>
                    <input 
                      type="text" 
                      value={editForm.avatarSeed}
@@ -310,7 +358,7 @@ export default function ProfilePage() {
                  </div>
 
                  <div className="space-y-2">
-                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">Thought Stream (Bio)</label>
+                   <label className="text-[10px] font-black uppercase tracking-widest opacity-40 ml-2">{isBangla ? 'আপনার কথা' : 'About you'}</label>
                    <textarea 
                      value={editForm.bio}
                      onChange={e => setEditForm({...editForm, bio: e.target.value})}
@@ -321,16 +369,18 @@ export default function ProfilePage() {
 
                <div className="flex gap-4 mt-10">
                  <button 
-                   onClick={() => setIsEditing(false)}
+                   type="button"
+                   onClick={cancelEditing}
                    className="flex-1 py-4 glass rounded-2xl typo-label opacity-60 hover:opacity-100 transition-all"
                  >
-                   Cancel
+                   {isBangla ? 'বাতিল' : 'Cancel'}
                  </button>
                  <button 
+                   type="button"
                    onClick={handleSave}
                    className="flex-1 py-4 bg-[var(--text-main)] text-[var(--bg-color)] rounded-2xl typo-label opacity-100 shadow-xl active:scale-95 transition-all"
                  >
-                   Save Matrix Profile
+                   {isBangla ? 'সেভ করুন' : 'Save profile'}
                  </button>
                </div>
              </motion.div>
@@ -340,7 +390,6 @@ export default function ProfilePage() {
     </motion.div>
   );
 }
-
 function StatCard({ label, value, icon: Icon, color }: any) {
   return (
     <div className="p-5 rounded-2xl bg-[var(--text-main)]/[0.02] border border-[var(--border-color)] hover:border-[var(--text-main)]/20 transition-all group">
@@ -350,28 +399,5 @@ function StatCard({ label, value, icon: Icon, color }: any) {
       <p className="text-xl font-black text-[var(--text-main)] tracking-tighter leading-none">{value}</p>
       <p className="text-[9px] font-black tracking-widest opacity-30 mt-2 uppercase">{label}</p>
     </div>
-  );
-}
-
-function Trash2(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 6h18" />
-      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-      <line x1="10" x2="10" y1="11" y2="17" />
-      <line x1="14" x2="14" y1="11" y2="17" />
-    </svg>
   );
 }

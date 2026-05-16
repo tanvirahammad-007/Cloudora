@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useWeather } from '../context/WeatherContext';
+import { useSettings } from '../context/SettingsContext';
 import { Activity, Filter, Download } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { unsplashService } from '../services/unsplashService';
@@ -37,7 +38,9 @@ const AnalyticsSkeleton = () => (
 
 export default function AnalyticsPage() {
   const { weather, loading } = useWeather();
+  const { settings } = useSettings();
   const [bgImage, setBgImage] = useState<string | null>(null);
+  const isBangla = settings.language === 'bn';
 
   useEffect(() => {
     if (weather) {
@@ -53,8 +56,8 @@ export default function AnalyticsPage() {
         <div className="p-6 rounded-full bg-indigo-500/10 text-indigo-500 mb-6">
           <Activity size={48} />
         </div>
-        <h2 className="text-2xl font-black text-[var(--text-main)] mb-2">No Atmospheric Data</h2>
-        <p className="text-[var(--text-muted)] max-w-md">Initiate a search to unlock advanced climatic insights and historical patterns.</p>
+        <h2 className="text-2xl font-black text-[var(--text-main)] mb-2">{isBangla ? 'আবহাওয়ার তথ্য নেই' : 'No weather data'}</h2>
+        <p className="text-[var(--text-muted)] max-w-md">{isBangla ? 'তথ্য দেখতে একটি শহর খুঁজুন।' : 'Search a city to see details.'}</p>
       </div>
     );
   }
@@ -66,11 +69,28 @@ export default function AnalyticsPage() {
     wind: h.windSpeed,
   }));
 
+  const handleExport = () => {
+    const exportPayload = {
+      location: weather.location,
+      current: weather.current,
+      aqi: weather.aqi,
+      hourly: chartData,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cloudora-${weather.location.name.toLowerCase().replace(/\s+/g, '-')}-analytics.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex-1 p-8 h-full overflow-y-auto hide-scrollbar relative"
+      className="premium-page relative"
     >
       {/* Background Image Overlay */}
       <AnimatePresence>
@@ -83,25 +103,27 @@ export default function AnalyticsPage() {
           >
             <img 
               src={bgImage} 
-              alt="Analytics Background" 
+              alt=""
+              aria-hidden="true"
+              decoding="async"
               className="w-full h-full object-cover opacity-50 saturate-[1.2]"
             />
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="max-w-7xl mx-auto space-y-12 relative z-10">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4">
+      <div className="premium-page-inner max-w-7xl space-y-12 relative z-10">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1 sm:px-4">
           <div>
-            <h1 className="text-5xl font-black text-[var(--text-main)] tracking-tighter">Atmospheric Perspectives</h1>
-            <p className="text-[var(--text-muted)] font-black uppercase tracking-[0.4em] text-[10px] mt-3 opacity-40">Climatic Narrative for {weather.location.name}</p>
+            <h1 className="text-4xl sm:text-5xl font-black text-[var(--text-main)] tracking-tighter">{isBangla ? 'আবহাওয়ার বিস্তারিত' : 'Weather details'}</h1>
+            <p className="text-[var(--text-muted)] font-black uppercase tracking-[0.4em] text-[10px] mt-3 opacity-40">{isBangla ? `${weather.location.name} এর তথ্য` : `Details for ${weather.location.name}`}</p>
           </div>
           
           <div className="flex items-center gap-3">
-            <button className="p-4 rounded-2xl bg-white/40 dark:bg-black/40 border border-[var(--border-color)] hover:border-indigo-500/30 transition-all text-[var(--text-muted)] hover:text-indigo-500 shadow-sm">
+            <button type="button" aria-label="Filter analytics" className="p-4 rounded-2xl bg-white/40 dark:bg-black/40 border border-[var(--border-color)] hover:border-indigo-500/30 transition-all text-[var(--text-muted)] hover:text-indigo-500 shadow-sm">
               <Filter size={18} />
             </button>
-            <button className="flex items-center gap-3 px-8 py-4 bg-indigo-500 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-indigo-600 shadow-xl shadow-indigo-500/20 active:scale-95 transition-all">
+            <button type="button" onClick={handleExport} className="flex items-center gap-3 px-6 sm:px-8 py-4 bg-indigo-500 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-indigo-600 shadow-xl shadow-indigo-500/20 active:scale-95 transition-all">
               <Download size={16} />
               Export
             </button>
@@ -120,14 +142,3 @@ export default function AnalyticsPage() {
     </motion.div>
   );
 }
-
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="glass px-4 py-2 rounded-xl border border-white/10 text-[10px] font-black text-white">
-        {payload[0].value.toFixed(1)} km/h
-      </div>
-    );
-  }
-  return null;
-};

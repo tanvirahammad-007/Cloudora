@@ -7,8 +7,8 @@ interface ThermalVelocityChartProps {
 
 export default function ThermalVelocityChart({ data }: ThermalVelocityChartProps) {
   return (
-    <div className="xl:col-span-2 glass-panel p-10 rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] shadow-xl overflow-hidden relative group transition-all hover:border-indigo-500/20">
-      <div className="flex items-center justify-between mb-12">
+    <section aria-label="Thermal velocity chart" className="xl:col-span-2 glass-panel p-6 sm:p-8 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] shadow-xl overflow-hidden relative group transition-all hover:border-indigo-500/20">
+      <div className="flex items-center justify-between mb-8 lg:mb-12">
         <div className="flex items-center gap-4">
           <div className="p-3.5 rounded-2xl bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
             <Thermometer size={22} />
@@ -20,7 +20,7 @@ export default function ThermalVelocityChart({ data }: ThermalVelocityChartProps
         </div>
       </div>
       
-      <div className="h-[400px] w-full">
+      <div className="h-[300px] sm:h-[360px] lg:h-[400px] w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
@@ -45,17 +45,18 @@ export default function ThermalVelocityChart({ data }: ThermalVelocityChartProps
             <Tooltip 
               contentStyle={{ 
                 borderRadius: '1.5rem', 
-                background: 'rgba(255,255,255,0.8)', 
+                background: 'var(--panel-bg)',
                 backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(0,0,0,0.05)',
+                border: '1px solid var(--border-color)',
                 boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-                padding: '1rem'
+                padding: '1rem',
+                color: 'var(--text-main)'
               }} 
             />
             <Area type="monotone" dataKey="temp" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorTempAnalytics)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </section>
   );
 }

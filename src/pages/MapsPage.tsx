@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { useWeather } from '../context/WeatherContext';
+import { useSettings } from '../context/SettingsContext';
 import { Globe, Layers, Navigation } from 'lucide-react';
 import { cn } from '../lib/utils';
 import WeatherMap from '../components/maps/WeatherMap';
@@ -24,6 +25,8 @@ const MapsSkeleton = () => (
 
 export default function MapsPage() {
   const { weather, loading } = useWeather();
+  const { settings } = useSettings();
+  const isBangla = settings.language === 'bn';
   
   if (loading && !weather) return <MapsSkeleton />;
   
@@ -32,30 +35,30 @@ export default function MapsPage() {
     : [51.505, -0.09];
 
   const legendItems = [
-    { label: 'Rain', color: 'bg-blue-500', range: 'Moderate' },
-    { label: 'Cloud', color: 'bg-gray-400', range: 'Overcast' },
-    { label: 'Temp', color: 'bg-orange-500', range: 'High' }
+    { label: isBangla ? 'বৃষ্টি' : 'Rain', color: 'bg-blue-500', range: isBangla ? 'মাঝারি' : 'Medium' },
+    { label: isBangla ? 'মেঘ' : 'Cloud', color: 'bg-gray-400', range: isBangla ? 'বেশি' : 'High' },
+    { label: isBangla ? 'তাপ' : 'Temp', color: 'bg-orange-500', range: isBangla ? 'বেশি' : 'High' }
   ];
 
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex-1 p-6 flex flex-col gap-8 h-full"
+      className="premium-page flex flex-col gap-6 sm:gap-8"
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0">
         <div>
-          <h1 className="text-4xl font-black text-[var(--text-main)] tracking-tighter">Atmospheric Radar</h1>
-          <p className="text-[var(--text-muted)] font-black uppercase tracking-[0.25em] text-[10px] mt-2 opacity-60">Real-time geospatial observation</p>
+          <h1 className="text-4xl font-black text-[var(--text-main)] tracking-tighter">{isBangla ? 'আবহাওয়ার মানচিত্র' : 'Weather map'}</h1>
+          <p className="text-[var(--text-muted)] font-black uppercase tracking-[0.25em] text-[10px] mt-2 opacity-60">{isBangla ? 'এখনকার আবহাওয়া দেখুন' : 'See current weather'}</p>
         </div>
         
         <div className="flex items-center gap-3 glass p-2 rounded-2xl border border-[var(--border-color)]">
           {[
-            { icon: Globe, label: 'Standard', active: true },
-            { icon: Layers, label: 'Precipitation', active: false },
-            { icon: Navigation, label: 'Orbital', active: false }
+            { icon: Globe, label: isBangla ? 'সাধারণ' : 'Normal', active: true },
+            { icon: Layers, label: isBangla ? 'বৃষ্টি' : 'Rain', active: false },
+            { icon: Navigation, label: isBangla ? 'দিক' : 'Direction', active: false }
           ].map((mode, i) => (
-            <button key={i} className={cn(
+            <button key={i} type="button" aria-pressed={mode.active} className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
               mode.active ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "text-[var(--text-muted)] hover:text-indigo-400"
             )}>
@@ -66,7 +69,7 @@ export default function MapsPage() {
         </div>
       </div>
 
-      <div className="flex-1 glass rounded-[3rem] border border-[var(--border-color)] overflow-hidden relative shadow-2xl min-h-[500px]">
+      <div className="flex-1 glass rounded-[2rem] sm:rounded-[3rem] border border-[var(--border-color)] overflow-hidden relative shadow-2xl min-h-[420px] sm:min-h-[500px]">
         <WeatherMap position={position} weather={weather} />
         <MapLegend items={legendItems} />
         <RadarStatus />

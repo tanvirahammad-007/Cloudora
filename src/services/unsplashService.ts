@@ -1,4 +1,5 @@
-const ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
+const ACCESS_KEY = import.meta.env.VITE_UNSPLASH_API || import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
+const imageCache = new Map<string, string>();
 
 // Fallback high-quality images if API key is missing
 const FALLBACK_IMAGES: Record<string, string> = {
@@ -11,9 +12,36 @@ const FALLBACK_IMAGES: Record<string, string> = {
   default: "https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?auto=format&fit=crop&q=80&w=1200",
 };
 
+const LOCATION_FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200",
+  "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&q=80&w=1200",
+];
+
+const hashText = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+};
+
+const getLocationFallbackImage = (seed: string) => {
+  return LOCATION_FALLBACK_IMAGES[hashText(seed) % LOCATION_FALLBACK_IMAGES.length];
+};
+
 export const unsplashService = {
-  getWeatherImage: async (query: string): Promise<string> => {
-    const formattedQuery = encodeURIComponent(query.toLowerCase());
+  getWeatherImage: async (query: string, page = 1): Promise<string> => {
+    const normalizedQuery = query.toLowerCase().trim();
+    const formattedQuery = encodeURIComponent(normalizedQuery);
+    const cacheKey = `${formattedQuery}-${page}`;
+
+    const cachedImage = imageCache.get(cacheKey);
+    if (cachedImage) return cachedImage;
     
     if (!ACCESS_KEY) {
       if (formattedQuery.includes('clear')) return FALLBACK_IMAGES.clear;
@@ -27,18 +55,42 @@ export const unsplashService = {
 
     try {
       const response = await fetch(
-        `https://api.unsplash.com/search/photos?query=${formattedQuery}&orientation=landscape&per_page=1`,
+        `https://api.unsplash.com/search/photos?query=${formattedQuery}&orientation=landscape&per_page=1&page=${page}&content_filter=high`,
         {
           headers: {
             Authorization: `Client-ID ${ACCESS_KEY}`,
           },
         }
       );
+      if (!response.ok) return FALLBACK_IMAGES.default;
+
       const data = await response.json();
-      return data.results[0]?.urls?.regular || FALLBACK_IMAGES.default;
+      const image = data.results[0]?.urls?.regular || FALLBACK_IMAGES.default;
+      imageCache.set(cacheKey, image);
+      return image;
     } catch (error) {
       console.error('Unsplash fetch error:', error);
       return FALLBACK_IMAGES.default;
     }
+  },
+
+  getLocationImage: async (city: string, country: string, condition: string, lat: number, lon: number): Promise<string> => {
+    const seed = `${city}-${country}-${condition}-${lat.toFixed(2)}-${lon.toFixed(2)}`;
+    const cacheKey = `location-${seed}`;
+    const cachedImage = imageCache.get(cacheKey);
+    if (cachedImage) return cachedImage;
+
+    if (!ACCESS_KEY) {
+      const fallback = getLocationFallbackImage(seed);
+      imageCache.set(cacheKey, fallback);
+      return fallback;
+    }
+
+    const page = (hashText(seed) % 10) + 1;
+    const query = `${city} ${country} landmark city skyline ${condition} weather`;
+    const image = await unsplashService.getWeatherImage(query, page);
+    const resolvedImage = image === FALLBACK_IMAGES.default ? getLocationFallbackImage(seed) : image;
+    imageCache.set(cacheKey, resolvedImage);
+    return resolvedImage;
   }
 };

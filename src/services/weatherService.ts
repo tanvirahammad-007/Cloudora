@@ -1,35 +1,53 @@
-import axios from 'axios';
 import { WeatherData, CitySuggestion, CountryDetails } from '../types/weather';
+import { createAppError } from '../lib/errorUtils';
+import { countryApiClient, geoApiClient, weatherApiClient } from './apiClient';
 
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
-const WEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5';
-const GEO_BASE_URL = 'https://api.openweathermap.org/geo/1.0';
-const AIR_QUALITY_BASE_URL = 'https://api.openweathermap.org/data/2.5/air_pollution';
-const COUNTRIES_BASE_URL = 'https://restcountries.com/v3.1';
 
 export const weatherService = {
   async getWeatherData(lat: number, lon: number, cityName: string): Promise<WeatherData> {
     if (!API_KEY) {
       console.warn('OpenWeatherMap API Key is missing. Please add VITE_OPENWEATHER_API_KEY to your .env file.');
+      throw createAppError({
+        kind: 'api',
+        source: 'weather-service',
+        message: 'Weather access is not ready. Please add the weather API key and try again.',
+      });
     }
 
-    const [currentRes, forecastRes, aqiRes] = await Promise.all([
-      axios.get(`${WEATHER_BASE_URL}/weather`, {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      throw createAppError({ kind: 'offline', source: 'weather-service' });
+    }
+
+    const [currentResult, forecastResult, aqiResult] = await Promise.allSettled([
+      weatherApiClient.get('/weather', {
         params: { lat, lon, units: 'metric', appid: API_KEY },
       }),
-      axios.get(`${WEATHER_BASE_URL}/forecast`, {
+      weatherApiClient.get('/forecast', {
         params: { lat, lon, units: 'metric', appid: API_KEY },
       }),
-      axios.get(AIR_QUALITY_BASE_URL, {
+      weatherApiClient.get('/air_pollution', {
         params: { lat, lon, appid: API_KEY },
       }),
     ]);
+
+    if (currentResult.status === 'rejected') {
+      throw currentResult.reason;
+    }
+
+    const currentRes = currentResult.value;
+    const forecastList = forecastResult.status === 'fulfilled' ? forecastResult.value.data?.list || [] : [];
+    const airQuality = aqiResult.status === 'fulfilled' ? aqiResult.value.data?.list?.[0] : null;
+
+    if (!currentRes.data?.main || !currentRes.data?.weather?.[0] || !currentRes.data?.sys) {
+      throw createAppError({ kind: 'missing-data', source: 'weather-service' });
+    }
 
     const countryCode = currentRes.data.sys.country;
     let countryDetails: CountryDetails | undefined;
 
     try {
-      const countryRes = await axios.get(`${COUNTRIES_BASE_URL}/alpha/${countryCode}`);
+      const countryRes = await countryApiClient.get(`/alpha/${countryCode}`);
       const c = countryRes.data[0];
       countryDetails = {
         name: c.name.common,
@@ -46,7 +64,7 @@ export const weatherService = {
     }
 
     const dailyData: Record<string, any> = {};
-    forecastRes.data.list.forEach((item: any) => {
+    forecastList.forEach((item: any) => {
       const date = item.dt_txt.split(' ')[0];
       if (!dailyData[date]) {
         dailyData[date] = {
@@ -63,7 +81,7 @@ export const weatherService = {
       }
     });
 
-    return {
+    const data: WeatherData = {
       current: {
         temp: Math.round(currentRes.data.main.temp),
         feelsLike: Math.round(currentRes.data.main.feels_like),
@@ -77,7 +95,7 @@ export const weatherService = {
         sunrise: currentRes.data.sys.sunrise,
         sunset: currentRes.data.sys.sunset,
       },
-      hourly: forecastRes.data.list.slice(0, 24).map((item: any) => ({
+      hourly: forecastList.slice(0, 24).map((item: any) => ({
         time: item.dt_txt,
         temp: Math.round(item.main.temp),
         humidity: item.main.humidity,
@@ -87,14 +105,6 @@ export const weatherService = {
         icon: item.weather[0].icon,
       })),
       daily: Object.values(dailyData).slice(0, 7),
-      aqi: {
-        european: aqiRes.data.list[0].main.aqi,
-        us: aqiRes.data.list[0].main.aqi, // OpenWeather simple AQI is 1-5
-        pm10: aqiRes.data.list[0].components.pm10,
-        pm25: aqiRes.data.list[0].components.pm2_5,
-        co: aqiRes.data.list[0].components.co,
-        no2: aqiRes.data.list[0].components.no2,
-      },
       location: {
         name: cityName,
         country: countryCode,
@@ -104,11 +114,36 @@ export const weatherService = {
       },
       countryDetails,
     };
+
+    if (airQuality?.main && airQuality?.components) {
+      data.aqi = {
+        european: airQuality.main.aqi,
+        us: airQuality.main.aqi, // OpenWeather simple AQI is 1-5
+        pm10: airQuality.components.pm10,
+        pm25: airQuality.components.pm2_5,
+        co: airQuality.components.co,
+        no2: airQuality.components.no2,
+      };
+    }
+
+    return data;
   },
 
   async searchCities(query: string): Promise<CitySuggestion[]> {
-    if (!query || query.length < 2 || !API_KEY) return [];
-    const res = await axios.get(`${GEO_BASE_URL}/direct`, {
+    if (!query.trim()) throw createAppError({ kind: 'empty-search', source: 'city-search', retryable: false });
+    if (!API_KEY) {
+      throw createAppError({
+        kind: 'api',
+        source: 'city-search',
+        message: 'City search is not ready. Please add the weather API key and try again.',
+      });
+    }
+    if (query.trim().length < 2) return [];
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      throw createAppError({ kind: 'offline', source: 'city-search' });
+    }
+
+    const res = await geoApiClient.get('/direct', {
       params: { q: query, limit: 10, appid: API_KEY },
     });
     return res.data.map((item: any, i: number) => ({
@@ -123,7 +158,7 @@ export const weatherService = {
 
   async getCurrentWeatherSummary(lat: number, lon: number) {
     if (!API_KEY) return null;
-    const res = await axios.get(`${WEATHER_BASE_URL}/weather`, {
+    const res = await weatherApiClient.get('/weather', {
       params: { lat, lon, units: 'metric', appid: API_KEY },
     });
     return {

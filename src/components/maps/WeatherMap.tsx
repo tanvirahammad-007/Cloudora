@@ -4,6 +4,7 @@ import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { useEffect } from 'react';
 
 // Fix for Leaflet default icon issues in React
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -15,7 +16,11 @@ L.Icon.Default.mergeOptions({
 
 function ChangeView({ center }: { center: [number, number] }) {
   const map = useMap();
-  map.setView(center, 10);
+
+  useEffect(() => {
+    map.setView(center, 10, { animate: true });
+  }, [center, map]);
+
   return null;
 }
 
@@ -30,6 +35,7 @@ export default function WeatherMap({ position, weather }: WeatherMapProps) {
       center={position} 
       zoom={10} 
       scrollWheelZoom={true} 
+      zoomControl={false}
       className="h-full w-full z-0"
     >
       <ChangeView center={position} />

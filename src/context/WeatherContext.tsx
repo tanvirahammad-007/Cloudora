@@ -2,14 +2,19 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback,
 import { WeatherData, CitySuggestion } from '../types/weather';
 import { weatherService } from '../services/weatherService';
 import { useSettings } from './SettingsContext';
+import { useErrors } from './ErrorContext';
+import { AppError } from '../types/error';
+import { createAppError, normalizeError } from '../lib/errorUtils';
 
 interface WeatherContextType {
   weather: WeatherData | null;
   loading: boolean;
   error: string | null;
+  appError: AppError | null;
   lastUpdated: Date | null;
   searchHistory: CitySuggestion[];
   fetchWeather: (lat: number, lon: number, cityName: string) => Promise<void>;
+  retryFetchWeather: () => Promise<void>;
   addToHistory: (city: CitySuggestion) => void;
   removeFromHistory: (lat: number, lon: number) => void;
   clearHistory: () => void;
@@ -19,20 +24,29 @@ const WeatherContext = createContext<WeatherContextType | undefined>(undefined);
 
 export function WeatherProvider({ children }: { children: ReactNode }) {
   const { settings } = useSettings();
+  const { reportError } = useErrors();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [appError, setAppError] = useState<AppError | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [currentParams, setCurrentParams] = useState<{ lat: number; lon: number; cityName: string } | null>(null);
 
   const [searchHistory, setSearchHistory] = useState<CitySuggestion[]>(() => {
-    const saved = localStorage.getItem('search_history');
-    return saved ? JSON.parse(saved) : [];
+    if (typeof window === 'undefined') return [];
+
+    try {
+      const saved = localStorage.getItem('search_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
 
   const fetchWeather = useCallback(async (lat: number, lon: number, cityName: string) => {
     setLoading(true);
     setError(null);
+    setAppError(null);
     try {
       const data = await weatherService.getWeatherData(lat, lon, cityName);
       setWeather(data);
@@ -40,11 +54,22 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
       setCurrentParams({ lat, lon, cityName });
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || err.message || 'Failed to fetch weather data. Please check your API key.');
+      const normalized = reportError(normalizeError(err, { kind: 'api', source: 'weather-context' }));
+      setAppError(normalized);
+      setError(normalized.friendlyMessage);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [reportError]);
+
+  const retryFetchWeather = useCallback(async () => {
+    if (currentParams) {
+      await fetchWeather(currentParams.lat, currentParams.lon, currentParams.cityName);
+      return;
+    }
+
+    await fetchWeather(51.5074, -0.1278, 'London');
+  }, [currentParams, fetchWeather]);
 
   // Polling for real-time updates every 30 minutes
   useEffect(() => {
@@ -61,7 +86,9 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
     setSearchHistory((prev) => {
       const filtered = prev.filter((item) => item.lat !== city.lat || item.lon !== city.lon);
       const updated = [city, ...filtered].slice(0, 10);
-      localStorage.setItem('search_history', JSON.stringify(updated));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('search_history', JSON.stringify(updated));
+      }
       return updated;
     });
   }, []);
@@ -69,14 +96,18 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
   const removeFromHistory = useCallback((lat: number, lon: number) => {
     setSearchHistory((prev) => {
       const updated = prev.filter((item) => item.lat !== lat || item.lon !== lon);
-      localStorage.setItem('search_history', JSON.stringify(updated));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('search_history', JSON.stringify(updated));
+      }
       return updated;
     });
   }, []);
 
   const clearHistory = useCallback(() => {
     setSearchHistory([]);
-    localStorage.removeItem('search_history');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('search_history');
+    }
   }, []);
 
   // Initial load
@@ -88,24 +119,27 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
             await fetchWeather(position.coords.latitude, position.coords.longitude, 'Current Location');
           },
           async () => {
-            // Default to London
+            reportError(createAppError({ kind: 'location-denied', source: 'geolocation' }));
             await fetchWeather(51.5074, -0.1278, 'London');
-          }
+          },
+          { enableHighAccuracy: false, maximumAge: 10 * 60 * 1000, timeout: 8000 }
         );
       } else {
         await fetchWeather(51.5074, -0.1278, 'London');
       }
     };
     init();
-  }, [fetchWeather, settings.autoLocation]);
+  }, [fetchWeather, reportError, settings.autoLocation]);
 
   const value = useMemo(() => ({
     weather, 
     loading, 
     error, 
+    appError,
     lastUpdated, 
     searchHistory, 
     fetchWeather, 
+    retryFetchWeather,
     addToHistory,
     removeFromHistory,
     clearHistory
@@ -113,9 +147,11 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
     weather, 
     loading, 
     error, 
+    appError,
     lastUpdated, 
     searchHistory, 
     fetchWeather, 
+    retryFetchWeather,
     addToHistory,
     removeFromHistory,
     clearHistory

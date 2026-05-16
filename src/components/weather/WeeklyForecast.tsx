@@ -3,6 +3,8 @@ import { useSettings } from '../../context/SettingsContext';
 import { Calendar, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { convertTemp } from '../../lib/unitUtils';
+import ErrorStateCard from '../errors/ErrorStateCard';
+import SafeImage from '../common/SafeImage';
 
 const ForecastSkeleton = () => (
   <div className="glass-panel p-10 flex flex-col rounded-[4rem] border border-[var(--border-color)] bg-[var(--panel-bg)] h-full overflow-hidden animate-pulse">
@@ -33,14 +35,28 @@ const ForecastSkeleton = () => (
 );
 
 export default function WeeklyForecast() {
-  const { weather, loading } = useWeather();
+  const { weather, loading, retryFetchWeather } = useWeather();
   const { settings } = useSettings();
 
   if (loading && !weather) return <ForecastSkeleton />;
   if (!weather) return null;
 
+  if (weather.daily.length === 0) {
+    return (
+      <ErrorStateCard
+        kind="forecast-unavailable"
+        title={settings.language === 'bn' ? 'আগাম আবহাওয়া পাওয়া যায়নি' : 'Forecast is unavailable'}
+        message={settings.language === 'bn' ? 'এই জায়গার আগামী দিনের তথ্য এখন আসেনি। বর্তমান আবহাওয়া দেখা যাচ্ছে।' : 'The forecast did not arrive for this location. Current weather is still available.'}
+        actionLabel={settings.language === 'bn' ? 'আবার চেষ্টা করুন' : 'Retry forecast'}
+        onRetry={retryFetchWeather}
+        compact
+        className="h-full min-h-[320px]"
+      />
+    );
+  }
+
   return (
-    <div className="glass-panel p-[var(--spacing-gap-md)] flex flex-col rounded-[4.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/80 h-full overflow-hidden group transition-all duration-700 hover:shadow-2xl hover:shadow-[var(--text-main)]/5">
+    <section aria-label="Weekly forecast" className="glass-panel p-[var(--spacing-gap-md)] flex flex-col rounded-[4.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/80 h-full overflow-hidden group transition-all duration-700 hover:shadow-2xl hover:shadow-[var(--text-main)]/5">
       <div className="flex items-center justify-between mb-[var(--spacing-gap-lg)]">
         <div className="flex items-center gap-5">
           <div className="p-4 rounded-[1.25rem] bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-2xl shadow-violet-500/20">
@@ -48,12 +64,12 @@ export default function WeeklyForecast() {
           </div>
           <h3 className="typo-h3">Forecast Horizon</h3>
         </div>
-        <button className="typo-label px-6 py-3 glass rounded-full hover:bg-[var(--text-main)]/5 transition-colors">
+        <button type="button" className="typo-label px-6 py-3 glass rounded-full hover:bg-[var(--text-main)]/5 transition-colors" aria-label="Open full weekly forecast">
           Full View
         </button>
       </div>
 
-      <div className="flex flex-col gap-[var(--spacing-gap-sm)] flex-1 overflow-y-auto hide-scrollbar pr-1">
+      <div className="flex flex-col gap-[var(--spacing-gap-sm)] flex-1 overflow-y-auto custom-scrollbar pr-1" role="list">
         {weather.daily.map((day, idx) => (
           <motion.div 
             initial={settings.animationsEnabled ? { opacity: 0, scale: 0.98 } : { opacity: 1, scale: 1 }}
@@ -61,12 +77,15 @@ export default function WeeklyForecast() {
             transition={{ delay: idx * 0.08, duration: 0.6 }}
             key={day.date} 
             className="flex flex-col sm:flex-row items-center justify-between p-6 sm:p-8 rounded-[2.5rem] sm:rounded-[3rem] bg-[var(--text-main)]/[0.02] border border-transparent hover:border-[var(--border-color)] hover:bg-[var(--text-main)]/[0.05] transition-all duration-500 group/item cursor-default gap-6 sm:gap-0"
+            role="listitem"
           >
             <div className="flex items-center gap-6 lg:gap-10 relative z-10 w-full sm:w-auto">
               <div className="relative group-hover/item:scale-110 transition-transform duration-700 shrink-0">
-                <img 
+                <SafeImage 
                   src={`https://openweathermap.org/img/wn/${day.icon}@2x.png`} 
                   alt={day.condition} 
+                  loading="lazy"
+                  decoding="async"
                   className="w-12 h-12 lg:w-14 lg:h-14 drop-shadow-2xl relative z-10 invert dark:invert-0 brightness-[1.2]"
                 />
               </div>
@@ -97,6 +116,6 @@ export default function WeeklyForecast() {
           </motion.div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

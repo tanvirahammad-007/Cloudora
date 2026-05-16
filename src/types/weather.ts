@@ -14,7 +14,7 @@ export interface WeatherData {
   };
   hourly: HourlyForecast[];
   daily: DailyForecast[];
-  aqi: {
+  aqi?: {
     european: number;
     us: number;
     pm10: number;

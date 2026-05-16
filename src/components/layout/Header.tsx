@@ -1,4 +1,4 @@
-import { Search, Bell, MapPin, X, Loader2, Sparkles, LayoutGrid, Cloud } from 'lucide-react';
+import { Search, MapPin, X, Loader2, Sparkles } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useWeather } from '../../context/WeatherContext';
 import { weatherService } from '../../services/weatherService';
@@ -9,17 +9,22 @@ import ThemeToggle from './ThemeToggle';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { getCountryName } from '../../lib/geoUtils';
 import { useTranslation } from '../../hooks/useTranslation';
+import NotificationCenter from '../notifications/NotificationCenter';
+import { useErrors } from '../../context/ErrorContext';
+import { createAppError, normalizeError } from '../../lib/errorUtils';
 
 
 export default function Header() {
   const { t } = useTranslation();
   const { weather, fetchWeather, addToHistory, loading: weatherLoading } = useWeather();
+  const { reportError } = useErrors();
 
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<CitySuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,14 +38,20 @@ export default function Header() {
           const results = await weatherService.searchCities(query);
           setSuggestions(results);
           setShowSuggestions(true);
+          setSearchError('');
         } catch (err) {
           console.error('Search failed', err);
+          const normalized = reportError(normalizeError(err, { kind: 'api', source: 'header-search' }));
+          setSuggestions([]);
+          setShowSuggestions(true);
+          setSearchError(normalized.friendlyMessage);
         } finally {
           setIsSearching(false);
         }
       } else {
         setSuggestions([]);
         setShowSuggestions(false);
+        setSearchError('');
       }
     }, 400);
 
@@ -67,9 +78,22 @@ export default function Header() {
   };
 
   const handleSearchClick = () => {
-    if (suggestions.length > 0) {
-      handleSelect(suggestions[0]);
+    if (!query.trim()) {
+      const emptyError = reportError(createAppError({ kind: 'empty-search', source: 'header-search' }));
+      setSearchError(emptyError.friendlyMessage);
+      setShowSuggestions(true);
+      inputRef.current?.focus();
+      return;
     }
+
+    if (suggestions.length > 0) {
+      handleSelect(selectedIndex >= 0 && suggestions[selectedIndex] ? suggestions[selectedIndex] : suggestions[0]);
+      return;
+    }
+
+    const cityError = reportError(createAppError({ kind: 'invalid-city', source: 'header-search' }));
+    setSearchError(cityError.friendlyMessage);
+    setShowSuggestions(true);
   };
 
   const clearSearch = () => {
@@ -80,13 +104,18 @@ export default function Header() {
   };
 
   return (
-    <header className="h-20 lg:h-24 flex items-center justify-between gap-4 w-full px-4 lg:px-8 bg-transparent relative z-20">
+    <header className="relative z-20 flex min-h-20 w-full flex-wrap items-center justify-between gap-x-3 gap-y-3 bg-transparent px-4 py-3 lg:h-24 lg:flex-nowrap lg:px-8 lg:py-0">
       {/* Left side: Branding and Location */}
-      <div className="flex items-center gap-4 lg:gap-12 min-w-0 lg:min-w-[300px]">
-        <NavLink to="/" className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 group shrink-0">
-          <div className="w-10 h-10 lg:w-11 lg:h-11 bg-white text-black dark:bg-[#FFFFFF] dark:text-black rounded-xl lg:rounded-2xl flex items-center justify-center shadow-lg border border-white/20 relative overflow-hidden">
-            <Cloud size={20} lg:size={22} fill="currentColor" className="relative z-10" />
-            <div className="absolute inset-0 bg-black/5 opacity-50" />
+      <div className="order-1 flex items-center gap-4 lg:gap-12 min-w-0 lg:min-w-[300px]">
+        <NavLink to="/" className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 group shrink-0" aria-label="Cloudora home">
+          <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-xl lg:rounded-2xl flex items-center justify-center shadow-lg border border-sky-400/20 relative overflow-hidden bg-[#020614]">
+            <img
+              src="/cloudora-logo.png"
+              alt=""
+              aria-hidden="true"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
           </div>
           <div className="hidden sm:flex flex-col">
             <span className="text-lg lg:text-xl font-black tracking-widest uppercase text-[var(--text-main)] leading-none">Cloudora</span>
@@ -110,7 +139,7 @@ export default function Header() {
       </div>
 
       {/* Center side: Search Bar */}
-      <div className="flex-1 lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 w-full lg:max-w-[500px] xl:max-w-[600px] z-50">
+      <div className="order-3 lg:order-2 basis-full lg:basis-auto flex-1 lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 w-full lg:max-w-[500px] xl:max-w-[600px] z-50">
         <div className="relative group" ref={searchRef}>
           <div className={cn(
             "relative w-full flex items-center transition-all duration-500",
@@ -128,10 +157,17 @@ export default function Header() {
 
             <input
               ref={inputRef}
+              id="global-location-search"
               type="text"
               placeholder={t('exploreLocations')}
               value={query}
-
+              autoComplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={showSuggestions}
+              aria-controls="global-location-suggestions"
+              aria-activedescendant={selectedIndex >= 0 ? `location-suggestion-${selectedIndex}` : undefined}
+              aria-label="Search weather locations"
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -162,6 +198,8 @@ export default function Header() {
                   exit={{ opacity: 0, scale: 0.5 }}
                   onClick={clearSearch}
                   className="p-1.5 hover:bg-white/10 rounded-full text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all ml-2"
+                  type="button"
+                  aria-label="Clear search"
                 >
                   <X size={14} />
                 </motion.button>
@@ -170,25 +208,39 @@ export default function Header() {
           </div>
 
           <AnimatePresence>
-            {showSuggestions && suggestions.length > 0 && (
+            {showSuggestions && (suggestions.length > 0 || searchError || (query.length > 2 && !isSearching)) && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                id="global-location-suggestions"
+                role="listbox"
                 className="absolute top-full left-0 w-full bg-[var(--bg-color)] border border-[var(--border-color)] rounded-[1.5rem] lg:rounded-[2rem] overflow-hidden z-[100] shadow-2xl p-2 lg:p-3"
               >
                 <div className="px-3 py-2 mb-1 flex items-center justify-between opacity-50">
-                  <span className="typo-xs font-black uppercase tracking-widest">{t('globalIndex')}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{t('globalIndex')}</span>
                 </div>
 
-                <div className="max-h-[300px] lg:max-h-[400px] overflow-y-auto hide-scrollbar space-y-1">
-                  {suggestions.map((suggestion, idx) => (
+                <div className="max-h-[300px] lg:max-h-[400px] overflow-y-auto custom-scrollbar space-y-1">
+                  {searchError ? (
+                    <div className="px-4 py-5 text-xs font-bold text-[var(--text-muted)]">
+                      {searchError}
+                    </div>
+                  ) : suggestions.length === 0 ? (
+                    <div className="px-4 py-5 text-xs font-bold text-[var(--text-muted)]">
+                      No locations found.
+                    </div>
+                  ) : suggestions.map((suggestion, idx) => (
                     <motion.button
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.04 }}
                       key={`${suggestion.lat}-${suggestion.lon}-${idx}`}
+                      id={`location-suggestion-${idx}`}
+                      role="option"
+                      aria-selected={selectedIndex === idx}
+                      type="button"
                       onClick={() => handleSelect(suggestion)}
                       onMouseEnter={() => setSelectedIndex(idx)}
                       className={cn(
@@ -204,7 +256,7 @@ export default function Header() {
                             ? "bg-[var(--text-main)] text-[var(--bg-color)] shadow-lg"
                             : "bg-[var(--text-main)]/[0.05] border border-[var(--border-color)] text-[var(--text-main)]"
                         )}>
-                          <MapPin size={16} lg:size={20} className={cn(selectedIndex === idx && "animate-bounce")} />
+                          <MapPin size={16} className={cn("h-4 w-4 lg:h-5 lg:w-5", selectedIndex === idx && "animate-bounce")} />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -221,9 +273,9 @@ export default function Header() {
                         </div>
                       </div>
                       <Sparkles
-                        size={14} lg:size={16}
+                        size={14}
                         className={cn(
-                          "transition-all duration-500 shrink-0",
+                          "h-3.5 w-3.5 lg:h-4 lg:w-4 transition-all duration-500 shrink-0",
                           selectedIndex === idx ? "text-[var(--text-main)] opacity-100 scale-125" : "text-[var(--text-main)] opacity-10"
                         )}
                       />
@@ -237,19 +289,17 @@ export default function Header() {
       </div>
 
       {/* Right side: Tools and Profile */}
-      <div className="flex items-center gap-2 lg:gap-5 justify-end min-w-0 lg:min-w-[300px]">
-        <button className="hidden sm:flex relative w-10 h-10 lg:w-11 lg:h-11 items-center justify-center rounded-full bg-[var(--text-main)]/[0.05] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all active:scale-95 group">
-          <Bell size={18} lg:size={20} />
-          <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-[var(--bg-color)] group-hover:scale-125 transition-transform"></span>
-        </button>
+      <div className="order-2 lg:order-3 flex items-center gap-2 lg:gap-5 justify-end min-w-0 lg:min-w-[300px]">
+        <NotificationCenter />
 
         <ThemeToggle />
 
-        <NavLink to="/profile" className="relative group shrink-0">
+        <NavLink to="/profile" className="relative group shrink-0" aria-label="Open profile">
           <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full overflow-hidden border-2 border-white/10 shadow-lg active:scale-95 transition-all cursor-pointer group-hover:border-[var(--text-main)]/50">
             <img
               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(weather?.location.name || 'User')}`}
-              alt="User"
+              alt="User profile avatar"
+              decoding="async"
               className="w-full h-full object-cover bg-white/5"
             />
           </div>

@@ -1,10 +1,12 @@
 import { History, MapPin, Share2, Globe, Users, Landmark, Coins, Languages, Clock, ChevronRight } from 'lucide-react';
 import { useWeather } from '../../context/WeatherContext';
+import { useSettings } from '../../context/SettingsContext';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { unsplashService } from '../../services/unsplashService';
 import { getCountryName } from '../../lib/geoUtils';
+import { useNavigate } from 'react-router-dom';
 
 interface RightPanelProps {
   className?: string;
@@ -12,7 +14,23 @@ interface RightPanelProps {
 
 export default function RightPanel({ className }: RightPanelProps) {
   const { searchHistory, fetchWeather, weather, loading } = useWeather();
+  const { settings } = useSettings();
+  const navigate = useNavigate();
   const [geoBg, setGeoBg] = useState<string | null>(null);
+  const isBangla = settings.language === 'bn';
+  const copy = {
+    recent: isBangla ? 'সাম্প্রতিক খোঁজ' : 'Recent searches',
+    noRecent: isBangla ? 'কোনো খোঁজ নেই' : 'No recent searches',
+    countryInfo: isBangla ? 'দেশের তথ্য' : 'Country info',
+    loadingMap: isBangla ? 'মানচিত্র চালু হচ্ছে...' : 'Loading map...',
+    capital: isBangla ? 'রাজধানী' : 'Capital',
+    people: isBangla ? 'মানুষ' : 'People',
+    money: isBangla ? 'মুদ্রা' : 'Money',
+    zone: isBangla ? 'সময়' : 'Time',
+    upgradeTitle: isBangla ? 'আরও সুবিধা' : 'More tools',
+    upgradeText: isBangla ? 'আরও পুরোনো আবহাওয়া তথ্য ও ভালো পূর্বাভাস দেখুন।' : 'See more weather history and better forecasts.',
+    upgradeButton: isBangla ? 'আপগ্রেড' : 'Upgrade',
+  };
 
   useEffect(() => {
     if (weather) {
@@ -28,14 +46,14 @@ export default function RightPanel({ className }: RightPanelProps) {
           <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-2xl shadow-indigo-500/20">
             <History size={18} strokeWidth={2.5} />
           </div>
-          <h3 className="typo-label opacity-100">Synchronized Logs</h3>
+          <h3 className="typo-label opacity-100">{copy.recent}</h3>
         </div>
 
-        <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col gap-3 pb-4">
+        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-3 pb-4 pr-1">
           {searchHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full py-12 opacity-10">
               <History size={40} className="mb-4 text-[var(--text-main)]" />
-              <p className="typo-label tracking-tighter">No Recent Entries</p>
+              <p className="typo-label tracking-tighter">{copy.noRecent}</p>
             </div>
           ) : (
             <AnimatePresence mode="popLayout" initial={false}>
@@ -47,6 +65,7 @@ export default function RightPanel({ className }: RightPanelProps) {
                   exit={{ scale: 0.9, opacity: 0 }}
                   transition={{ delay: idx * 0.05, duration: 0.5 }}
                   key={`${city.lat}-${city.lon}-${idx}`}
+                  type="button"
                   onClick={() => fetchWeather(city.lat, city.lon, city.name)}
                   className="flex items-center gap-5 p-4 rounded-3xl bg-[var(--text-main)]/[0.02] hover:bg-[var(--text-main)]/[0.05] border border-transparent hover:border-[var(--border-color)] transition-all duration-500 group/item active:scale-[0.98]"
                 >
@@ -82,7 +101,9 @@ export default function RightPanel({ className }: RightPanelProps) {
             >
               <img 
                 src={geoBg} 
-                alt="Country Background" 
+                alt=""
+                aria-hidden="true"
+                decoding="async"
                 className="w-full h-full object-cover brightness-110 saturate-[1.3] contrast-[1.1] transition-transform duration-[40s] ease-linear"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-color)] via-[var(--bg-color)]/90 to-transparent"></div>
@@ -94,7 +115,7 @@ export default function RightPanel({ className }: RightPanelProps) {
           <div className="p-3.5 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-2xl shadow-sky-500/20">
             <Globe size={18} strokeWidth={2.5} />
           </div>
-          <h4 className="typo-label opacity-100">Global Metrics</h4>
+          <h4 className="typo-label opacity-100">{copy.countryInfo}</h4>
         </div>
         
         {loading && !weather ? (
@@ -112,7 +133,7 @@ export default function RightPanel({ className }: RightPanelProps) {
               className="flex items-center gap-6 px-6 py-5 rounded-[2.5rem] bg-[var(--text-main)]/[0.03] border border-[var(--border-color)] shadow-inner group/flag"
             >
               <div className="w-20 h-14 rounded-xl shadow-2xl overflow-hidden border border-black/10 flex-shrink-0 group-hover:scale-105 transition-transform duration-700 grayscale-[0.5] contrast-[1.2]">
-                <img src={weather.countryDetails.flag} alt={weather.countryDetails.name} className="w-full h-full object-cover" />
+                <img src={weather.countryDetails.flag} alt={weather.countryDetails.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <span className="typo-h3 text-xl truncate tracking-tighter block">{weather.countryDetails.name}</span>
@@ -122,10 +143,10 @@ export default function RightPanel({ className }: RightPanelProps) {
 
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Landmark, label: 'Capital', value: weather.countryDetails.capital },
-                { icon: Users, label: 'People', value: `${(weather.countryDetails.population / 1000000).toFixed(1)}M` },
-                { icon: Coins, label: 'Asset', value: weather.countryDetails.currencies[0]?.split('(')[0] || '-' },
-                { icon: Clock, label: 'Zone', value: weather.countryDetails.timezones[0] || '-' },
+                { icon: Landmark, label: copy.capital, value: weather.countryDetails.capital },
+                { icon: Users, label: copy.people, value: `${(weather.countryDetails.population / 1000000).toFixed(1)}M` },
+                { icon: Coins, label: copy.money, value: weather.countryDetails.currencies[0]?.split('(')[0] || '-' },
+                { icon: Clock, label: copy.zone, value: weather.countryDetails.timezones[0] || '-' },
               ].map((stat, i) => (stat.value && (
                 <div key={i} className="flex flex-col gap-2 p-5 rounded-3xl bg-[var(--text-main)]/[0.02] border border-transparent hover:border-[var(--border-color)] hover:bg-[var(--text-main)]/[0.04] transition-all duration-500 group/stat">
                    <div className="flex items-center gap-2 opacity-30 group-hover:opacity-60 transition-opacity">
@@ -140,7 +161,7 @@ export default function RightPanel({ className }: RightPanelProps) {
         ) : (
           <div className="flex flex-col items-center justify-center py-20 opacity-10">
             <Globe size={48} className="mb-4 text-[var(--text-main)]" />
-            <p className="typo-label tracking-tighter">Initializing Map...</p>
+            <p className="typo-label tracking-tighter">{copy.loadingMap}</p>
           </div>
         )}
       </div>
@@ -153,10 +174,10 @@ export default function RightPanel({ className }: RightPanelProps) {
          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 group-hover:rotate-12 transition-all duration-1000 text-[var(--text-main)] scale-150">
            <Share2 size={80} />
          </div>
-         <p className="typo-h3 text-xl mb-3 relative z-10 leading-none">Matrix Access</p>
-         <p className="text-[12px] opacity-40 relative z-10 font-bold leading-relaxed mb-10">Neural modeling and deep satellite history available via Matrix Neural Auth.</p>
-         <button className="w-full py-4 bg-[var(--text-main)] hover:scale-[1.02] text-[var(--bg-color)] typo-label opacity-100 rounded-[1.5rem] transition-all shadow-2xl active:scale-95 relative z-10">
-           Initialize Upgrade
+         <p className="typo-h3 text-xl mb-3 relative z-10 leading-none">{copy.upgradeTitle}</p>
+         <p className="text-[12px] opacity-40 relative z-10 font-bold leading-relaxed mb-10">{copy.upgradeText}</p>
+         <button type="button" onClick={() => navigate('/settings')} className="w-full py-4 bg-[var(--text-main)] hover:scale-[1.02] text-[var(--bg-color)] typo-label opacity-100 rounded-[1.5rem] transition-all shadow-2xl active:scale-95 relative z-10">
+           {copy.upgradeButton}
          </button>
       </motion.div>
     </aside>

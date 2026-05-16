@@ -1,8 +1,7 @@
-node_modules/
-build/
-dist/
-coverage/
+node_modules
+dist
+.env
+tmp-chrome-profile-4
 .DS_Store
-*.log
-.env*
-!.env.example
+.vscode
+coverage

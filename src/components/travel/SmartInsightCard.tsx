@@ -1,12 +1,15 @@
 import { Sun, ArrowRight, Loader2 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import { useWeather } from '../../context/WeatherContext';
+import { useSettings } from '../../context/SettingsContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function SmartInsightCard() {
   const { profile } = useUser();
   const { fetchWeather } = useWeather();
+  const { settings } = useSettings();
   const navigate = useNavigate();
+  const isBangla = settings.language === 'bn';
 
   const favorite = profile.favorites[0];
 
@@ -17,18 +20,21 @@ export default function SmartInsightCard() {
       <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform text-orange-600 duration-700">
         <Sun size={80} />
       </div>
-      <h4 className="text-xl font-black text-[var(--text-main)] tracking-tight relative z-10">Intelligence Brief</h4>
+      <h4 className="text-xl font-black text-[var(--text-main)] tracking-tight relative z-10">{isBangla ? 'ভালো সময়' : 'Good time to visit'}</h4>
       <p className="text-sm text-[var(--text-muted)] mt-3 font-medium leading-relaxed opacity-80 relative z-10">
-        Optimal atmospheric window detected for <span className="text-orange-600 font-bold">{favorite.name}</span> next week. Visual clarity expected to reach 98%.
+        {isBangla ? 'আগামী সপ্তাহে ' : 'Next week looks good for '}
+        <span className="text-orange-600 font-bold">{favorite.name}</span>
+        {isBangla ? ' ভ্রমণের জন্য। আকাশ পরিষ্কার থাকতে পারে।' : '. The sky may be clear.'}
       </p>
       <button 
+        type="button"
         onClick={() => {
           fetchWeather(favorite.lat, favorite.lon, favorite.name);
           navigate('/');
         }}
         className="flex items-center gap-3 mt-8 text-[10px] font-black uppercase tracking-[0.25em] text-orange-600 hover:gap-5 transition-all"
       >
-        View Full Analysis <ArrowRight size={16} />
+        {isBangla ? 'বিস্তারিত দেখুন' : 'View details'} <ArrowRight size={16} />
       </button>
     </div>
   );

@@ -9,7 +9,7 @@ interface DailySummaryCardProps {
 
 export default function DailySummaryCard({ weather, chartData }: DailySummaryCardProps) {
   return (
-    <div className="glass-panel p-10 rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] shadow-xl h-full flex flex-col justify-between group transition-all hover:border-indigo-500/20">
+    <section aria-label="Daily weather summary" className="glass-panel p-6 sm:p-8 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] shadow-xl h-full flex flex-col justify-between group transition-all hover:border-indigo-500/20">
       <div>
         <div className="flex items-center gap-4 mb-8">
           <div className="p-3.5 rounded-2xl bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
@@ -54,6 +54,6 @@ export default function DailySummaryCard({ weather, chartData }: DailySummaryCar
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -29,18 +29,23 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+  }
+
   :root {
-    --bg-color: #FFFFFF;
-    --bg-gradient: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
-    --text-main: #000000;
-    --text-muted: #737373;
-    /* Refined neutral */
-    --border-color: rgba(0, 0, 0, 0.05);
+    --bg-color: #eef7fb;
+    --bg-gradient: linear-gradient(135deg, #eef7fb 0%, #f8fbf2 48%, #f7f2ec 100%);
+    --text-main: #102033;
+    --text-muted: #607080;
+    /* Refined weather-neutral */
+    --border-color: rgba(59, 130, 246, 0.12);
     /* Softer borders */
-    --panel-bg: rgba(255, 255, 255, 0.9);
-    --accent-1: #000000;
-    --accent-2: #333333;
-    --accent-3: #666666;
+    --panel-bg: rgba(255, 255, 255, 0.94);
+    --accent-1: #0ea5e9;
+    --accent-2: #10b981;
+    --accent-3: #f59e0b;
 
     /* Typography Scale */
     --fs-display: clamp(4rem, 12vw, 10rem);
@@ -58,7 +63,7 @@
     --text-main: #f0f0f5;
     --text-muted: #8888a0;
     --border-color: rgba(140, 130, 255, 0.06);
-    --panel-bg: rgba(15, 15, 25, 0.65);
+    --panel-bg: rgba(15, 15, 25, 0.96);
     --accent-1: #a78bfa;
     --accent-1-alt: #c4b5fd;
     --accent-2: #818cf8;
@@ -67,12 +72,30 @@
 
   body {
     @apply transition-colors duration-500 ease-in-out antialiased overflow-hidden min-h-screen text-[var(--text-main)];
-    background-color: var(--bg-color);
+    background: var(--bg-gradient);
     font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+    overscroll-behavior: none;
   }
 
   * {
     @apply outline-none focus-visible:ring-1 focus-visible:ring-[var(--text-main)]/20;
+  }
+
+  *::selection {
+    background: color-mix(in srgb, var(--accent-1) 28%, transparent);
+    color: var(--text-main);
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  img,
+  svg {
+    flex-shrink: 0;
   }
 }
 
@@ -106,6 +129,14 @@
 
 @utility premium-container {
   @apply max-w-[1920px] mx-auto px-[var(--spacing-p-safe)] py-[var(--spacing-gap-md)] h-full w-full;
+}
+
+@utility premium-page {
+  @apply flex-1 h-full overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-8 py-4 sm:py-6;
+}
+
+@utility premium-page-inner {
+  @apply mx-auto w-full pb-28 md:pb-10;
 }
 
 @utility typo-display {
@@ -153,6 +184,12 @@
 }
 
 @layer utilities {
+  .glass,
+  .glass-panel,
+  .glass-card {
+    background: var(--panel-bg) !important;
+  }
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
@@ -182,6 +219,17 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
     }
   }
 }

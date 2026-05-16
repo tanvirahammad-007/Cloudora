@@ -1,6 +1,6 @@
 {
-  "name": "Aether - Global Weather Dashboard",
-  "description": "A premium glassmorphism weather dashboard featuring real-time data, 5-day forecasts, and hourly trends.",
+  "name": "Cloudora - Laggy Clouds",
+  "description": "A premium glassmorphism weather dashboard featuring real-time data, forecasts, alerts, and intelligent weather insights.",
   "requestFramePermissions": ["geolocation"],
   "majorCapabilities": []
 }

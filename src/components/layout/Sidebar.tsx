@@ -1,4 +1,4 @@
-import { Cloud, MapPin, Wind, Sun, Clock, Settings, LayoutGrid, Droplets, ArrowLeftRight, User, Globe } from 'lucide-react';
+import { Wind, Clock, Settings, LayoutGrid, ArrowLeftRight, User, Globe } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion } from 'motion/react';
 import { NavLink } from 'react-router-dom';
@@ -24,27 +24,29 @@ export default function Sidebar({ className, isMobile }: SidebarProps) {
 
   if (isMobile) {
     return (
-      <>
+      <nav className="flex items-center gap-1" aria-label="Mobile navigation">
         {menuItems.map((item, idx) => (
           <NavLink 
             key={idx} 
             to={item.path}
             end={item.path === '/'}
             className={({ isActive }) => cn(
-              "p-3 rounded-2xl transition-all duration-300", 
+              "shrink-0 p-2.5 sm:p-3 rounded-2xl transition-all duration-300 active:scale-95",
               isActive ? "bg-[var(--text-main)] text-[var(--bg-color)] shadow-lg" : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
             )}
+            aria-label={item.label}
+            title={item.label}
           >
             <item.icon size={20} />
           </NavLink>
         ))}
-      </>
+      </nav>
     );
   }
 
   return (
     <aside className={cn("hidden md:flex flex-col items-center justify-center h-full", className)}>
-      <nav className="flex flex-col items-center gap-[var(--spacing-gap-sm)] p-2 lg:p-3 bg-[var(--panel-bg)] backdrop-blur-3xl rounded-[2rem] lg:rounded-[2.5rem] border border-[var(--border-color)] shadow-2xl">
+      <nav className="flex flex-col items-center gap-[var(--spacing-gap-sm)] p-2 lg:p-3 bg-[var(--panel-bg)] backdrop-blur-3xl rounded-[2rem] lg:rounded-[2.5rem] border border-[var(--border-color)] shadow-2xl" aria-label="Primary navigation">
         {menuItems.map((item, idx) => (
           <NavLink
             key={idx}
@@ -56,6 +58,8 @@ export default function Sidebar({ className, isMobile }: SidebarProps) {
                 ? "text-[var(--text-main)]" 
                 : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
             )}
+            aria-label={item.label}
+            title={item.label}
           >
             {({ isActive }) => (
               <>
@@ -74,7 +78,7 @@ export default function Sidebar({ className, isMobile }: SidebarProps) {
                   />
                 )}
                 
-                {/* Tooltip Label — hover only, appears BELOW the icon with upward arrow */}
+                {/* Tooltip label */}
                 <div className="absolute top-[calc(100%+10px)] left-1/2 -translate-x-1/2 px-3.5 py-2 rounded-xl bg-[var(--text-main)] text-[var(--bg-color)] text-[9px] font-black uppercase tracking-[0.15em] opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[100] shadow-[0_8px_30px_rgba(0,0,0,0.3)]">
                   {/* Arrow pointing up */}
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-[var(--text-main)]" />

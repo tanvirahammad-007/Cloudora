@@ -15,7 +15,7 @@ export default function AnalyticalStatsGrid({ windSpeed }: AnalyticalStatsGridPr
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6" role="list" aria-label="Analytical weather statistics">
       {stats.map((stat, idx) => (
         <motion.div 
           key={idx}
@@ -23,6 +23,7 @@ export default function AnalyticalStatsGrid({ windSpeed }: AnalyticalStatsGridPr
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 * idx }}
           className="glass-panel p-8 rounded-[2.5rem] border border-[var(--border-color)] group hover:border-indigo-500/20 transition-all flex flex-col gap-4 shadow-lg"
+          role="listitem"
         >
           <div className={cn("p-3 w-fit rounded-2xl bg-white/5 border border-[var(--border-color)]", stat.color)}>
             <stat.icon size={20} />

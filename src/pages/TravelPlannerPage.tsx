@@ -7,10 +7,13 @@ import TravelPlanCard from '../components/travel/TravelPlanCard';
 import { TravelPlan } from '../types/travel';
 import { getPlans, deletePlan } from '../lib/travelUtils';
 import { Luggage, Compass, Activity, ArrowRight, ShieldCheck } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
 
 export default function TravelPlannerPage() {
   const [activeTab, setActiveTab] = useState<'upcoming' | 'explored'>('upcoming');
   const [plans, setPlans] = useState<TravelPlan[]>([]);
+  const { settings } = useSettings();
+  const isBangla = settings.language === 'bn';
 
   useEffect(() => {
     loadPlans();
@@ -34,9 +37,9 @@ export default function TravelPlannerPage() {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex-1 p-6 md:p-8 lg:p-12 h-full overflow-y-auto custom-scrollbar"
+      className="premium-page"
     >
-      <div className="max-w-[1600px] mx-auto space-y-12 pb-20">
+      <div className="premium-page-inner max-w-[1600px] space-y-10 lg:space-y-12">
         
         {/* Page Header */}
         <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 px-4">
@@ -45,33 +48,39 @@ export default function TravelPlannerPage() {
               <div className="p-4 rounded-3xl bg-[var(--text-main)] text-[var(--bg-color)] shadow-2xl">
                 <Compass size={28} strokeWidth={2.5} />
               </div>
-              <h1 className="text-5xl md:text-6xl font-black text-[var(--text-main)] tracking-tighter leading-none">
-                Expedition Intel
+              <h1 className="text-4xl md:text-6xl font-black text-[var(--text-main)] tracking-tighter leading-none">
+                {isBangla ? 'ভ্রমণ পরিকল্পনা' : 'Trip planner'}
               </h1>
             </div>
             <p className="text-[var(--text-muted)] font-black uppercase tracking-[0.4em] text-[10px] ml-1 opacity-40">
-              Strategic Climate-Aware Journey Planning
+              {isBangla ? 'আবহাওয়া দেখে সহজে ভ্রমণ ঠিক করুন' : 'Plan trips with weather in mind'}
             </p>
           </div>
           
-          <div className="flex items-center gap-2 p-1.5 glass rounded-[2rem] border border-[var(--border-color)] shadow-xl shrink-0">
+          <div className="flex w-full sm:w-auto items-center gap-2 overflow-x-auto p-1.5 glass rounded-[2rem] border border-[var(--border-color)] shadow-xl shrink-0 hide-scrollbar" role="tablist" aria-label="Trip filters">
             <button 
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'upcoming'}
               onClick={() => setActiveTab('upcoming')} 
               className={cn(
-                "px-10 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all", 
+                "shrink-0 px-7 sm:px-10 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all",
                 activeTab === 'upcoming' ? "bg-indigo-500 text-white shadow-xl shadow-indigo-500/20" : "text-[var(--text-muted)] hover:bg-[var(--text-main)]/5"
               )}
             >
-              Planned Future
+              {isBangla ? 'আসছে' : 'Upcoming'}
             </button>
             <button 
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'explored'}
               onClick={() => setActiveTab('explored')} 
               className={cn(
-                "px-10 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all", 
+                "shrink-0 px-7 sm:px-10 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all",
                 activeTab === 'explored' ? "bg-indigo-500 text-white shadow-xl shadow-indigo-500/20" : "text-[var(--text-muted)] hover:bg-[var(--text-main)]/5"
               )}
             >
-              Journey Archive
+              {isBangla ? 'পুরোনো' : 'Past trips'}
             </button>
           </div>
         </header>
@@ -86,17 +95,19 @@ export default function TravelPlannerPage() {
                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
                   <ShieldCheck size={120} />
                </div>
-               <h4 className="text-2xl font-black text-[var(--text-main)] tracking-tight relative z-10">Sync Assurance</h4>
-               <p className="text-sm text-[var(--text-muted)] mt-4 font-medium leading-relaxed opacity-70 relative z-10">Our algorithms analyze 5-day predictive patterns to ensure your exploration window remains within optimal safety thresholds.</p>
+               <h4 className="text-2xl font-black text-[var(--text-main)] tracking-tight relative z-10">{isBangla ? 'ভ্রমণ সহায়তা' : 'Travel confidence'}</h4>
+               <p className="text-sm text-[var(--text-muted)] mt-4 font-medium leading-relaxed opacity-70 relative z-10">
+                {isBangla ? 'Cloudora আপনার তারিখের আবহাওয়া দেখে সহজ সিদ্ধান্ত নিতে সাহায্য করে।' : 'Cloudora checks the forecast for your dates so you can plan with more confidence.'}
+               </p>
                
                <div className="mt-8 flex gap-6 relative z-10">
                   <div className="flex flex-col">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Reliability</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">{isBangla ? 'ভরসা' : 'Reliability'}</span>
                      <span className="text-xl font-black">99.2%</span>
                   </div>
                   <div className="flex flex-col">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Confidence</span>
-                     <span className="text-xl font-black">High</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">{isBangla ? 'আত্মবিশ্বাস' : 'Confidence'}</span>
+                     <span className="text-xl font-black">{isBangla ? 'ভালো' : 'High'}</span>
                   </div>
                </div>
             </div>
@@ -114,16 +125,16 @@ export default function TravelPlannerPage() {
                       <Luggage size={80} className="text-[var(--text-main)] opacity-10" />
                    </div>
                 </div>
-                <h2 className="text-4xl font-black text-[var(--text-main)] tracking-tight mb-4">Empty Itinerary</h2>
+                <h2 className="text-4xl font-black text-[var(--text-main)] tracking-tight mb-4">{isBangla ? 'কোনো ভ্রমণ নেই' : 'No trips yet'}</h2>
                 <p className="text-[var(--text-muted)] max-w-sm font-medium leading-relaxed opacity-50 mx-auto">
                   {activeTab === 'upcoming' 
-                    ? "Initialize your next global expedition by configuring a destination and timeframe in the commander panel." 
-                    : "No historical expeditions found in the archive logs. Start exploring to populate your journal."}
+                    ? (isBangla ? 'বাম পাশের ফর্মে জায়গা ও তারিখ দিন।' : 'Choose a place and date in the form.')
+                    : (isBangla ? 'পুরোনো ভ্রমণ পাওয়া যায়নি।' : 'No past trips found.')}
                 </p>
                 {activeTab === 'upcoming' && (
                   <div className="mt-12 flex items-center gap-3 text-indigo-500 animate-pulse">
                      <ArrowRight size={20} className="rotate-180" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">Configuration Required</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest">{isBangla ? 'ভ্রমণ যোগ করুন' : 'Add a trip'}</span>
                   </div>
                 )}
               </div>

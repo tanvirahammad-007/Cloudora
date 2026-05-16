@@ -7,19 +7,22 @@ export default function ThemeToggle() {
   const { theme } = settings;
 
   return (
-    <div 
+    <button
+      type="button"
       onClick={toggleTheme}
-      className="relative h-10 w-20 bg-white/5 border border-white/10 rounded-full flex items-center px-1 cursor-pointer group transition-all hover:bg-white/10"
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-pressed={theme === 'dark'}
+      className="relative h-10 w-20 bg-[var(--text-main)]/[0.05] border border-[var(--border-color)] rounded-full flex items-center px-1 cursor-pointer group transition-all hover:bg-[var(--text-main)]/10"
     >
       <div className="flex w-full justify-between px-1 relative z-10 pointer-events-none">
         <Sun 
           size={14} 
-          className={theme === 'light' ? 'text-black group-hover:scale-110 transition-transform' : 'text-[var(--text-muted)] group-hover:text-black transition-all'} 
+          className={theme === 'light' ? 'text-[var(--bg-color)] group-hover:scale-110 transition-transform' : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-all'}
           strokeWidth={theme === 'light' ? 3 : 2}
         />
         <Moon 
           size={14} 
-          className={theme === 'dark' ? 'text-white group-hover:scale-110 transition-transform' : 'text-[var(--text-muted)] group-hover:text-white transition-all'} 
+          className={theme === 'dark' ? 'text-[var(--bg-color)] group-hover:scale-110 transition-transform' : 'text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-all'}
           strokeWidth={theme === 'dark' ? 3 : 2}
         />
       </div>
@@ -35,6 +38,6 @@ export default function ThemeToggle() {
           <Moon size={14} className="text-[var(--bg-color)]" strokeWidth={3} fill="currentColor" />
         )}
       </motion.div>
-    </div>
+    </button>
   );
 }

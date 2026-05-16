@@ -1,101 +1,221 @@
-# Aether — Premium Weather Intelligence Dashboard
+# Cloudora / Laggy Clouds
 
-Aether is a professional-grade weather intelligence dashboard designed with a focus on high-fidelity glassmorphism aesthetics and real-time atmospheric data. Built for performance and precision, it provides deep insights into global weather patterns, air quality, and geographic context.
+Cloudora, also known as Laggy Clouds, is a premium weather dashboard built for clear weather insight, smooth motion, and a polished glassmorphism interface. It combines live weather data, location-aware imagery, air quality insight, forecasts, maps, saved cities, travel planning, and a lightweight notification system.
 
-![Dashboard Preview](https://images.unsplash.com/photo-1592210633464-a7db05248a11?auto=format&fit=crop&q=80&w=2000&h=800)
+The app is designed around a black, white, and blue atmospheric style with dynamic cloud backgrounds, responsive layouts, and simple user-friendly wording.
 
-## 🌟 Features
+## Features
 
-- **Real-time Global Search**: Instant weather data for any city worldwide.
-- **Micro-Atmospheric Metrics**: Track humidity, wind speed, UV levels (where applicable), and pressure.
-- **Hourly Trends Chart**: Visualize temperature fluctuations over the next 24 hours with interactive D3-powered visualizations.
-- **Weekly Cycles**: A comprehensive 5-day forecast with dynamic iconography.
-- **Air Quality Intelligence**: Deep dive into PM2.5, PM10, NOx, and general AQI safety levels.
-- **Geographic Context**: Dynamic data fetching for countries, including flags, currency, and population metrics.
-- **Adaptive Glassmorphism UI**: A fluid interface that looks stunning in both light and dark modes.
-- **Premium Performance**: Optimized with Framer Motion for smooth 60fps transitions and tailored CSS for minimal paint times.
+- Live weather dashboard for searched or detected locations.
+- Dynamic hero images powered by Unsplash so different locations can show different scenery.
+- Current weather, temperature, humidity, wind, sunrise, sunset, perceived temperature, and condition status.
+- Hourly and weekly forecast views.
+- Air quality panel with AQI-focused weather insight.
+- Saved city support for quick city tracking.
+- Interactive weather map area.
+- Travel planner with weather-aware trip cards and insights.
+- Analytics page with weather summaries and charts.
+- Profile and settings pages for personalization.
+- Premium notification center with unread badge, toast popups, clear all, remove, read/unread, categories, and localStorage persistence.
+- Calm notification behavior: only the latest 2 notifications are kept, only 2 popups show at once, and popups auto-hide after 2 seconds.
+- Dynamic moving cloud background with light and dark mode support.
+- Responsive UI for desktop, tablet, and mobile screens.
 
-## 🛠 Tech Stack
+## Tech Stack
 
-- **Framework**: React 18+ with Vite
-- **Language**: TypeScript (Strict Mode)
-- **Styling**: Tailwind CSS 4.0
-- **Animations**: Framer Motion
-- **Data Visualization**: Recharts (powered by D3)
-- **Icons**: Lucide React
-- **APIs**: 
-  - [OpenWeatherMap API](https://openweathermap.org/api) (Core Weather & AQI)
-  - [REST Countries API](https://restcountries.com/) (Geographic Intelligence)
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Framer Motion / Motion
+- Recharts
+- React Router
+- React Leaflet / Leaflet
+- Lucide React icons
+- OpenWeather API
+- Unsplash API
 
-## 📂 Folder Structure
+## Project Structure
 
 ```text
 src/
-├── components/
-│   ├── layout/         # Core structure (Sidebar, Dashboard, RightPanel)
-│   ├── ui/             # Reusable atomic units (ThemeToggle)
-│   └── weather/        # Domain-specific modules (WeatherHero, AirQuality, etc.)
-├── context/            # Global State Management (Weather & Theme context)
-├── services/           # API integration logic
-├── lib/                # Shared utilities and helpers
-├── index.css           # Global styles and Tailwind utility definitions
-└── App.tsx             # Main application entry point
+  components/
+    analytics/        Weather analytics cards and charts
+    layout/           App shell, sidebar, header, dashboard, background
+    maps/             Weather map UI
+    notifications/    Notification center, cards, and toast UI
+    travel/           Travel planner cards, forms, and insights
+    weather/          Hero, forecast, and air quality sections
+  context/            Weather, user, settings, and notification state
+  hooks/              Shared React hooks
+  lib/                Utility helpers
+  pages/              Main route pages
+  services/           Weather and Unsplash API logic
+  types/              TypeScript domain types
+  utils/              Weather and translation helpers
 ```
 
-## 🚀 Performance Optimization
+## Getting Started
 
-- **Selective Rerenders**: Optimized React Context usage to prevent unnecessary component updates during data fetches.
-- **Asset Optimization**: Using CDN-delivered SVG icons and lightweight weather assets.
-- **Memoized Calculations**: Extensive use of `useMemo` for processing complex API payloads.
-- **GPU Acceleration**: Hardware-accelerated animations using Framer Motion's `layout` and `motion` attributes.
-- **Smooth Layout Transitions**: Staggered children animations for a perceived decrease in loading times.
+### Requirements
 
-## ⚙️ Installation & Setup
+- Node.js 18 or newer
+- npm
+- OpenWeather API key
+- Unsplash API key
 
-### Prerequisites
-- Node.js 18.0 or higher
-- npm or yarn
-- An [OpenWeatherMap API Key](https://openweathermap.org/api)
+### Install
 
-### Steps
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/aether-weather.git
-   cd aether-weather
-   ```
+```bash
+npm install
+```
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+### Environment Variables
 
-3. **Configure Environment Variables**
-   Create a `.env` file (or rename `.env.example`) and add your credentials:
-   ```env
-   VITE_OPENWEATHER_API_KEY=your_api_key_here
-   ```
+Create a `.env` file in the project root. You can copy `.env.example`, then replace the values with your own API keys.
 
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
+```env
+VITE_OPENWEATHER_API_KEY=your_openweather_api_key
+VITE_UNSPLASH_API=your_unsplash_access_key
+GEMINI_API_KEY=your_optional_gemini_api_key
+```
 
-## 🌐 Deployment to Vercel
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `VITE_OPENWEATHER_API_KEY` | Yes | Weather, forecast, and AQI data |
+| `VITE_UNSPLASH_API` | Yes | Location-based dashboard images |
+| `GEMINI_API_KEY` | Optional | Future AI-powered features |
 
-Aether is optimized for one-click deployment on Vercel:
+Keep real API keys out of public commits.
 
-1. Push your code to a GitHub repository.
-2. Import the project into the [Vercel Dashboard](https://vercel.com/new).
-3. In the **Environment Variables** section, add `VITE_OPENWEATHER_API_KEY`.
-4. Click **Deploy**.
+### Run Locally
 
-## 📍 Environment Variables
+```bash
+npm run dev
+```
 
-| Variable | Description | Source |
-|----------|-------------|--------|
-| `VITE_OPENWEATHER_API_KEY` | Real-time weather and AQI data | [OpenWeatherMap](https://openweathermap.org/) |
-| `GEMINI_API_KEY` | (Optional) For future AI-driven insights | [Google AI Studio](https://aistudio.google.com/) |
+The development server runs on:
 
----
+```text
+http://localhost:3000
+```
 
-Developed with ❤️ for the Modern Web.
+### Build
+
+```bash
+npm run build
+```
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+### Type Check
+
+```bash
+npm run lint
+```
+
+This project uses `tsc --noEmit` for the lint script.
+
+## App Pages
+
+- Dashboard: Main weather view with hero image, live condition, metrics, forecasts, and air quality.
+- Analytics: Weather summaries and chart-based insight.
+- Maps: Weather map and radar-style UI.
+- Saved Cities: Favorite city management.
+- Travel Planner: Weather-aware travel planning.
+- Profile: User profile and preferences.
+- Settings: Theme, units, language, alert settings, and notification controls.
+
+## Notification System
+
+Cloudora includes a small premium notification system built with React context and localStorage.
+
+Current behavior:
+
+- Notification bell in the header.
+- Animated unread badge.
+- Dropdown notification center.
+- Toast popups.
+- Mark read/unread.
+- Remove single notification.
+- Clear all notifications.
+- Notification categories.
+- Sound toggle support.
+- localStorage persistence.
+- Maximum 2 notifications kept.
+- Maximum 2 toast popups shown at once.
+- Toast popups disappear automatically after 2 seconds.
+- Cooldown is used to avoid frequent notification spam.
+
+## Dynamic Background
+
+The layout includes animated background clouds and atmospheric motion. The clouds are tuned for both light and dark mode and stay behind the main interface.
+
+Related file:
+
+```text
+src/components/layout/LivelyBackground.tsx
+```
+
+## API Notes
+
+OpenWeather is used for weather, forecast, and AQI data.
+
+Unsplash is used for location-based dashboard hero images. If images do not change by location, check that `VITE_UNSPLASH_API` is set correctly and restart the dev server.
+
+## Deployment
+
+Cloudora can be deployed to platforms such as Vercel, Netlify, or any static hosting provider that supports Vite builds.
+
+Typical deployment steps:
+
+1. Push the project to GitHub.
+2. Import it into the hosting provider.
+3. Add the environment variables listed above.
+4. Run the build command:
+
+```bash
+npm run build
+```
+
+5. Publish the `dist` output.
+
+## Troubleshooting
+
+If weather data does not load:
+
+- Check `VITE_OPENWEATHER_API_KEY`.
+- Restart the dev server after changing `.env`.
+- Make sure the API key is active.
+
+If location images do not load:
+
+- Check `VITE_UNSPLASH_API`.
+- Make sure the Unsplash key has access to the API.
+- Try searching a different city.
+
+If notifications feel too quiet:
+
+- The app intentionally keeps only 2 notifications and uses a cooldown to avoid spam.
+- Check notification settings in the Settings page.
+
+If port 3000 is busy:
+
+- Stop the other process or let Vite choose another available port.
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the local Vite dev server |
+| `npm run build` | Create a production build |
+| `npm run preview` | Preview the production build |
+| `npm run lint` | Run TypeScript checks |
+
+## License
+
+MIT License You are free to use, modify, and distribute this project.
