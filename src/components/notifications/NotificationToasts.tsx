@@ -2,8 +2,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
 import NotificationCard from './NotificationCard';
+import { memo } from 'react';
 
-export default function NotificationToasts() {
+function NotificationToasts() {
   const { toasts, removeNotification, toggleRead } = useNotifications();
 
   return (
@@ -12,7 +13,7 @@ export default function NotificationToasts() {
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
-            layout
+            layout={false}
             initial={{ opacity: 0, x: 32, scale: 0.96 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 32, scale: 0.96 }}
@@ -37,3 +38,5 @@ export default function NotificationToasts() {
     </div>
   );
 }
+
+export default memo(NotificationToasts);

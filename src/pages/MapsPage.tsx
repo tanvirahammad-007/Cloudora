@@ -3,10 +3,11 @@ import { useWeather } from '../context/WeatherContext';
 import { useSettings } from '../context/SettingsContext';
 import { Globe, Layers, Navigation } from 'lucide-react';
 import { cn } from '../lib/utils';
-import WeatherMap from '../components/maps/WeatherMap';
-import MapLegend from '../components/maps/MapLegend';
-import RadarStatus from '../components/maps/RadarStatus';
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
+
+const WeatherMap = lazy(() => import('../components/maps/WeatherMap'));
+const MapLegend = lazy(() => import('../components/maps/MapLegend'));
+const RadarStatus = lazy(() => import('../components/maps/RadarStatus'));
 
 const MapsSkeleton = () => (
   <div className="flex-1 p-6 flex flex-col gap-8 h-full animate-pulse">
@@ -71,9 +72,11 @@ export default function MapsPage() {
       </div>
 
       <div className="flex-1 glass rounded-[2rem] sm:rounded-[3rem] border border-[var(--border-color)] overflow-hidden relative shadow-2xl min-h-[420px] sm:min-h-[500px]">
-        <WeatherMap position={position} weather={weather} />
-        <MapLegend items={legendItems} />
-        <RadarStatus />
+        <Suspense fallback={<div className="h-full min-h-[420px] w-full animate-pulse bg-white/5" />}>
+          <WeatherMap position={position} weather={weather} />
+          <MapLegend items={legendItems} />
+          <RadarStatus />
+        </Suspense>
       </div>
     </motion.div>
   );

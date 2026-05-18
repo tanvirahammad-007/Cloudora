@@ -2,6 +2,8 @@ import { TrendingUp, Droplets, Wind } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { memo, useMemo } from 'react';
+import { useSettings } from '../../context/SettingsContext';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface DailySummaryCardProps {
   weather: any;
@@ -10,6 +12,9 @@ interface DailySummaryCardProps {
 
 function DailySummaryCard({ weather, chartData }: DailySummaryCardProps) {
   const windBars = useMemo(() => chartData.slice(0, 12), [chartData]);
+  const { settings } = useSettings();
+  const isMobile = useIsMobile();
+  const animationsEnabled = settings.animationsEnabled && !isMobile;
 
   return (
     <section aria-label="Daily weather summary" className="glass-panel p-6 sm:p-8 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] shadow-xl h-full flex flex-col justify-between group transition-all hover:border-indigo-500/20">
@@ -31,7 +36,7 @@ function DailySummaryCard({ weather, chartData }: DailySummaryCardProps) {
             </div>
             <div className="w-full h-1.5 bg-white/5 rounded-full mt-4 overflow-hidden">
               <motion.div 
-                initial={{ width: 0 }}
+                initial={animationsEnabled ? { width: 0 } : { width: `${weather.current.humidity}%` }}
                 animate={{ width: `${weather.current.humidity}%` }}
                 className="h-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]"
               />

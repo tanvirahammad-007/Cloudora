@@ -2,12 +2,14 @@ import { Zap, Wind, Info, Activity } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { memo, useMemo } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface AnalyticalStatsGridProps {
   windSpeed: number;
 }
 
 function AnalyticalStatsGrid({ windSpeed }: AnalyticalStatsGridProps) {
+  const isMobile = useIsMobile();
   const stats = useMemo(() => [
     { icon: Zap, label: 'UV Flux', value: '7.4', unit: 'Index', color: 'text-amber-500' },
     { icon: Wind, label: 'Gust Max', value: windSpeed, unit: 'km/h', color: 'text-indigo-500' },
@@ -20,7 +22,7 @@ function AnalyticalStatsGrid({ windSpeed }: AnalyticalStatsGridProps) {
       {stats.map((stat, idx) => (
         <motion.div 
           key={idx}
-          initial={{ opacity: 0, y: 15 }}
+          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 * idx }}
           className="glass-panel p-8 rounded-[2.5rem] border border-[var(--border-color)] group hover:border-indigo-500/20 transition-all flex flex-col gap-4 shadow-lg"

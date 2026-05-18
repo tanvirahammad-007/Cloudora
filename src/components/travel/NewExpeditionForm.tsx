@@ -1,17 +1,45 @@
 import { Plane, MapPin, Calendar, Search, Loader2 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
-import type { FormEvent } from 'react';
+import { memo, useCallback, useMemo, useRef, useEffect, useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { weatherService } from '../../services/weatherService';
 import { CitySuggestion } from '../../types/weather';
 import { calculateTravelScore, generateTravelRecommendations, savePlan } from '../../lib/travelUtils';
 import { TravelPlan } from '../../types/travel';
 import { cn } from '../../lib/utils';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 interface NewExpeditionFormProps {
   onPlanCreated: () => void;
 }
 
-export default function NewExpeditionForm({ onPlanCreated }: NewExpeditionFormProps) {
+const climateOptions = ['Tropical', 'Alpine', 'Oceanic'];
+
+interface DestinationSuggestionProps {
+  suggestion: CitySuggestion;
+  onSelect: (suggestion: CitySuggestion) => void;
+}
+
+const DestinationSuggestion = memo(function DestinationSuggestion({ suggestion, onSelect }: DestinationSuggestionProps) {
+  const handleClick = useCallback(() => onSelect(suggestion), [onSelect, suggestion]);
+
+  return (
+    <button
+      key={`${suggestion.lat}-${suggestion.lon}`}
+      type="button"
+      role="option"
+      onClick={handleClick}
+      className="w-full text-left p-4 hover:bg-[var(--text-main)]/[0.05] rounded-2xl flex items-center gap-3 transition-colors"
+    >
+      <Search size={14} className="opacity-40" />
+      <div>
+        <p className="text-sm font-bold text-[var(--text-main)]">{suggestion.name}</p>
+        <p className="text-[10px] uppercase tracking-widest opacity-40">{suggestion.state ? `${suggestion.state}, ` : ''}{suggestion.country}</p>
+      </div>
+    </button>
+  );
+});
+
+function NewExpeditionForm({ onPlanCreated }: NewExpeditionFormProps) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<CitySuggestion[]>([]);
   const [selectedCity, setSelectedCity] = useState<CitySuggestion | null>(null);
@@ -22,30 +50,55 @@ export default function NewExpeditionForm({ onPlanCreated }: NewExpeditionFormPr
   const [searching, setSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const debouncedQuery = useDebouncedValue(query.trim(), 350);
   const searchRef = useRef<HTMLDivElement>(null);
+  const searchCacheRef = useRef(new Map<string, CitySuggestion[]>());
+  const activeSearchRef = useRef(0);
 
   useEffect(() => {
-    if (query.length < 2) {
+    if (debouncedQuery.length < 2) {
       setSuggestions([]);
+      setSearching(false);
       return;
     }
 
-    const fetchSuggestions = async () => {
-      setSearching(true);
+    let isActive = true;
+    const requestId = activeSearchRef.current + 1;
+    activeSearchRef.current = requestId;
+    const normalizedQuery = debouncedQuery.toLowerCase();
+    const cachedResults = searchCacheRef.current.get(normalizedQuery);
+
+    if (cachedResults) {
+      setSuggestions(cachedResults);
+      setShowSuggestions(true);
+      setSearching(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    setSearching(true);
+    (async () => {
       try {
-        const results = await weatherService.searchCities(query);
+        const results = await weatherService.searchCities(debouncedQuery);
+        if (!isActive || activeSearchRef.current !== requestId) return;
+        searchCacheRef.current.set(normalizedQuery, results);
         setSuggestions(results);
         setShowSuggestions(true);
       } catch (err) {
+        if (!isActive || activeSearchRef.current !== requestId) return;
         console.error('Search failed', err);
       } finally {
-        setSearching(false);
+        if (isActive && activeSearchRef.current === requestId) {
+          setSearching(false);
+        }
       }
-    };
+    })();
 
-    const timeoutId = setTimeout(fetchSuggestions, 400);
-    return () => clearTimeout(timeoutId);
-  }, [query]);
+    return () => {
+      isActive = false;
+    };
+  }, [debouncedQuery]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,7 +111,17 @@ export default function NewExpeditionForm({ onPlanCreated }: NewExpeditionFormPr
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleCreatePlan = async (event?: FormEvent<HTMLFormElement>) => {
+  const handleDestinationChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    if (selectedCity) setSelectedCity(null);
+  }, [selectedCity]);
+
+  const handleSelectDestination = useCallback((suggestion: CitySuggestion) => {
+    setSelectedCity(suggestion);
+    setShowSuggestions(false);
+  }, []);
+
+  const handleCreatePlan = useCallback(async (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     setErrorMessage('');
 
@@ -114,7 +177,9 @@ export default function NewExpeditionForm({ onPlanCreated }: NewExpeditionFormPr
     } finally {
       setLoading(false);
     }
-  };
+  }, [climate, endDate, onPlanCreated, selectedCity, startDate]);
+
+  const canSubmit = useMemo(() => !loading && !!selectedCity && !!startDate && !!endDate, [endDate, loading, selectedCity, startDate]);
 
   return (
     <form onSubmit={handleCreatePlan} className="glass-panel p-6 sm:p-8 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] shadow-xl space-y-8 relative overflow-hidden group">
@@ -135,10 +200,7 @@ export default function NewExpeditionForm({ onPlanCreated }: NewExpeditionFormPr
               type="text" 
               placeholder="Search locations..." 
               value={selectedCity ? selectedCity.name : query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                if (selectedCity) setSelectedCity(null);
-              }}
+              onChange={handleDestinationChange}
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               role="combobox"
               aria-expanded={showSuggestions}
@@ -151,22 +213,11 @@ export default function NewExpeditionForm({ onPlanCreated }: NewExpeditionFormPr
           {showSuggestions && suggestions.length > 0 && (
             <div id="trip-location-suggestions" role="listbox" className="absolute top-full left-0 w-full mt-2 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-[2rem] overflow-hidden z-50 shadow-2xl p-2 animate-in fade-in slide-in-from-top-2">
               {suggestions.map((suggestion) => (
-                <button
+                <DestinationSuggestion
                   key={`${suggestion.lat}-${suggestion.lon}`}
-                  type="button"
-                  role="option"
-                  onClick={() => {
-                    setSelectedCity(suggestion);
-                    setShowSuggestions(false);
-                  }}
-                  className="w-full text-left p-4 hover:bg-[var(--text-main)]/[0.05] rounded-2xl flex items-center gap-3 transition-colors"
-                >
-                  <Search size={14} className="opacity-40" />
-                  <div>
-                    <p className="text-sm font-bold text-[var(--text-main)]">{suggestion.name}</p>
-                    <p className="text-[10px] uppercase tracking-widest opacity-40">{suggestion.state ? `${suggestion.state}, ` : ''}{suggestion.country}</p>
-                  </div>
-                </button>
+                  suggestion={suggestion}
+                  onSelect={handleSelectDestination}
+                />
               ))}
             </div>
           )}
@@ -175,7 +226,7 @@ export default function NewExpeditionForm({ onPlanCreated }: NewExpeditionFormPr
         <div className="flex flex-col gap-3">
           <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] ml-4 opacity-50">Climate Environment</label>
           <div className="grid grid-cols-3 gap-3">
-            {['Tropical', 'Alpine', 'Oceanic'].map((type) => (
+            {climateOptions.map((type) => (
               <button 
                 key={type} 
                 type="button"
@@ -232,7 +283,7 @@ export default function NewExpeditionForm({ onPlanCreated }: NewExpeditionFormPr
 
         <button 
           type="submit"
-          disabled={loading || !selectedCity || !startDate || !endDate}
+          disabled={!canSubmit}
           className="w-full py-6 bg-indigo-500 disabled:bg-indigo-400 disabled:opacity-50 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] hover:bg-indigo-600 shadow-2xl shadow-indigo-500/30 transition-all active:scale-95 mt-6 flex items-center justify-center gap-3"
         >
           {loading ? (
@@ -248,3 +299,5 @@ export default function NewExpeditionForm({ onPlanCreated }: NewExpeditionFormPr
     </form>
   );
 }
+
+export default memo(NewExpeditionForm);

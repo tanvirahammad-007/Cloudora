@@ -1,12 +1,18 @@
 import { Thermometer } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { memo } from 'react';
+import { useSettings } from '../../context/SettingsContext';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface ThermalVelocityChartProps {
   data: any[];
 }
 
 function ThermalVelocityChart({ data }: ThermalVelocityChartProps) {
+  const { settings } = useSettings();
+  const isMobile = useIsMobile();
+  const animationDuration = settings.animationsEnabled && !isMobile ? 900 : 0;
+
   return (
     <section aria-label="Thermal velocity chart" className="xl:col-span-2 glass-panel p-6 sm:p-8 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] shadow-xl overflow-hidden relative group transition-all hover:border-indigo-500/20">
       <div className="flex items-center justify-between mb-8 lg:mb-12">
@@ -54,7 +60,7 @@ function ThermalVelocityChart({ data }: ThermalVelocityChartProps) {
                 color: 'var(--text-main)'
               }} 
             />
-            <Area type="monotone" dataKey="temp" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorTempAnalytics)" animationDuration={900} />
+            <Area type="monotone" dataKey="temp" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorTempAnalytics)" isAnimationActive={animationDuration > 0} animationDuration={animationDuration} />
           </AreaChart>
         </ResponsiveContainer>
       </div>

@@ -1,5 +1,6 @@
 import { Search, MapPin, X, Loader2, Sparkles } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 import { useWeather } from '../../context/WeatherContext';
 import { weatherService } from '../../services/weatherService';
 import { CitySuggestion } from '../../types/weather';
@@ -12,11 +13,75 @@ import { useTranslation } from '../../hooks/useTranslation';
 import NotificationCenter from '../notifications/NotificationCenter';
 import { useErrors } from '../../context/ErrorContext';
 import { createAppError, normalizeError } from '../../lib/errorUtils';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
+interface SuggestionButtonProps {
+  suggestion: CitySuggestion;
+  index: number;
+  selected: boolean;
+  onSelect: (city: CitySuggestion) => void;
+  onHover: (index: number) => void;
+}
 
-export default function Header() {
+const SuggestionButton = memo(function SuggestionButton({ suggestion, index, selected, onSelect, onHover }: SuggestionButtonProps) {
+  const handleClick = useCallback(() => onSelect(suggestion), [onSelect, suggestion]);
+  const handleMouseEnter = useCallback(() => onHover(index), [index, onHover]);
+
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      key={`${suggestion.lat}-${suggestion.lon}-${index}`}
+      id={`location-suggestion-${index}`}
+      role="option"
+      aria-selected={selected}
+      type="button"
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      className={cn(
+        "w-full p-3 lg:p-4 flex items-center justify-between rounded-xl lg:rounded-2xl transition-all text-left group/item scale-100",
+        selected ? "bg-[var(--text-main)]/10 scale-[1.01] border-[var(--text-main)]/10" : "hover:bg-[var(--text-main)]/5 border-transparent",
+        "border"
+      )}
+    >
+      <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+        <div className={cn(
+          "w-10 h-10 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center transition-all duration-500 shrink-0",
+          selected
+            ? "bg-[var(--text-main)] text-[var(--bg-color)] shadow-lg"
+            : "bg-[var(--text-main)]/[0.05] border border-[var(--border-color)] text-[var(--text-main)]"
+        )}>
+          <MapPin size={16} className={cn("h-4 w-4 lg:h-5 lg:w-5", selected && "animate-bounce")} />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-black text-xs lg:text-sm tracking-tight truncate">{suggestion.name}</p>
+            {suggestion.state && (
+              <span className="hidden sm:inline-block text-[8px] lg:text-[10px] bg-[var(--text-main)]/5 px-1 rounded text-[var(--text-muted)] font-black uppercase tracking-tighter">
+                {suggestion.state}
+              </span>
+            )}
+          </div>
+          <p className="text-[9px] lg:text-[11px] text-[var(--text-muted)] font-bold opacity-60 mt-0.5 lg:mt-1 uppercase tracking-wider truncate">
+            {getCountryName(suggestion.country)}
+          </p>
+        </div>
+      </div>
+      <Sparkles
+        size={14}
+        className={cn(
+          "h-3.5 w-3.5 lg:h-4 lg:w-4 transition-all duration-500 shrink-0",
+          selected ? "text-[var(--text-main)] opacity-100 scale-125" : "text-[var(--text-main)] opacity-10"
+        )}
+      />
+    </motion.button>
+  );
+});
+
+function Header() {
   const { t } = useTranslation();
-  const { weather, fetchWeather, addToHistory, loading: weatherLoading } = useWeather();
+  const { weather, fetchWeather, addToHistory } = useWeather();
   const { reportError } = useErrors();
 
   const navigate = useNavigate();
@@ -26,45 +91,65 @@ export default function Header() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const debouncedQuery = useDebouncedValue(query.trim(), 350);
+  const deferredSuggestions = useDeferredValue(suggestions);
+  const searchCacheRef = useRef(new Map<string, CitySuggestion[]>());
+  const activeSearchRef = useRef(0);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let isActive = true;
+    const requestId = activeSearchRef.current + 1;
+    activeSearchRef.current = requestId;
     setSelectedIndex(-1);
-    const delayDebounceFn = setTimeout(async () => {
-      if (query.length > 2) {
-        setIsSearching(true);
+    const normalizedQuery = debouncedQuery.toLowerCase();
+
+    if (debouncedQuery.length > 2) {
+      const cachedResults = searchCacheRef.current.get(normalizedQuery);
+      if (cachedResults) {
+        setSuggestions(cachedResults);
+        setShowSuggestions(true);
+        setSearchError('');
+        setIsSearching(false);
+        return () => {
+          isActive = false;
+        };
+      }
+
+      setIsSearching(true);
+      (async () => {
         try {
-          const results = await weatherService.searchCities(query);
-          if (!isActive) return;
+          const results = await weatherService.searchCities(debouncedQuery);
+          if (!isActive || activeSearchRef.current !== requestId) return;
+          searchCacheRef.current.set(normalizedQuery, results);
           setSuggestions(results);
           setShowSuggestions(true);
           setSearchError('');
         } catch (err) {
-          if (!isActive) return;
+          if (!isActive || activeSearchRef.current !== requestId) return;
           console.error('Search failed', err);
           const normalized = reportError(normalizeError(err, { kind: 'api', source: 'header-search' }));
           setSuggestions([]);
           setShowSuggestions(true);
           setSearchError(normalized.friendlyMessage);
         } finally {
-          if (isActive) {
+          if (isActive && activeSearchRef.current === requestId) {
             setIsSearching(false);
           }
         }
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
-        setSearchError('');
-      }
-    }, 400);
+      })();
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setSearchError('');
+      setIsSearching(false);
+    }
 
     return () => {
       isActive = false;
-      clearTimeout(delayDebounceFn);
     };
-  }, [query, reportError]);
+  }, [debouncedQuery, reportError]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -85,6 +170,14 @@ export default function Header() {
     navigate('/');
   }, [addToHistory, fetchWeather, navigate]);
 
+  const handleSuggestionHover = useCallback((index: number) => {
+    setSelectedIndex(index);
+  }, []);
+
+  const handleQueryChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+  }, []);
+
   const handleSearchClick = useCallback(() => {
     if (!query.trim()) {
       const emptyError = reportError(createAppError({ kind: 'empty-search', source: 'header-search' }));
@@ -103,6 +196,26 @@ export default function Header() {
     setSearchError(cityError.friendlyMessage);
     setShowSuggestions(true);
   }, [handleSelect, query, reportError, selectedIndex, suggestions]);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+        handleSelect(suggestions[selectedIndex]);
+      } else {
+        handleSearchClick();
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  }, [handleSearchClick, handleSelect, selectedIndex, suggestions]);
+
+  const avatarSeed = useMemo(() => encodeURIComponent(weather?.location.name || 'User'), [weather?.location.name]);
 
   const clearSearch = useCallback(() => {
     setQuery('');
@@ -176,24 +289,8 @@ export default function Header() {
               aria-controls="global-location-suggestions"
               aria-activedescendant={selectedIndex >= 0 ? `location-suggestion-${selectedIndex}` : undefined}
               aria-label="Search weather locations"
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-                    handleSelect(suggestions[selectedIndex]);
-                  } else {
-                    handleSearchClick();
-                  }
-                } else if (e.key === 'ArrowDown') {
-                  e.preventDefault();
-                  setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
-                } else if (e.key === 'ArrowUp') {
-                  e.preventDefault();
-                  setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
-                } else if (e.key === 'Escape') {
-                  setShowSuggestions(false);
-                }
-              }}
+              onChange={handleQueryChange}
+              onKeyDown={handleKeyDown}
               onFocus={() => query.length > 2 && setShowSuggestions(true)}
               className="min-w-0 flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[var(--text-main)] font-semibold text-sm lg:text-base placeholder:text-[var(--text-muted)] opacity-80"
             />
@@ -239,55 +336,15 @@ export default function Header() {
                     <div className="px-4 py-5 text-xs font-bold text-[var(--text-muted)]">
                       No locations found.
                     </div>
-                  ) : suggestions.map((suggestion, idx) => (
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.04 }}
+                  ) : deferredSuggestions.map((suggestion, idx) => (
+                    <SuggestionButton
                       key={`${suggestion.lat}-${suggestion.lon}-${idx}`}
-                      id={`location-suggestion-${idx}`}
-                      role="option"
-                      aria-selected={selectedIndex === idx}
-                      type="button"
-                      onClick={() => handleSelect(suggestion)}
-                      onMouseEnter={() => setSelectedIndex(idx)}
-                      className={cn(
-                        "w-full p-3 lg:p-4 flex items-center justify-between rounded-xl lg:rounded-2xl transition-all text-left group/item scale-100",
-                        selectedIndex === idx ? "bg-[var(--text-main)]/10 scale-[1.01] border-[var(--text-main)]/10" : "hover:bg-[var(--text-main)]/5 border-transparent",
-                        "border"
-                      )}
-                    >
-                      <div className="flex items-center gap-3 lg:gap-4 min-w-0">
-                        <div className={cn(
-                          "w-10 h-10 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center transition-all duration-500 shrink-0",
-                          selectedIndex === idx
-                            ? "bg-[var(--text-main)] text-[var(--bg-color)] shadow-lg"
-                            : "bg-[var(--text-main)]/[0.05] border border-[var(--border-color)] text-[var(--text-main)]"
-                        )}>
-                          <MapPin size={16} className={cn("h-4 w-4 lg:h-5 lg:w-5", selectedIndex === idx && "animate-bounce")} />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-black text-xs lg:text-sm tracking-tight truncate">{suggestion.name}</p>
-                            {suggestion.state && (
-                              <span className="hidden sm:inline-block text-[8px] lg:text-[10px] bg-[var(--text-main)]/5 px-1 rounded text-[var(--text-muted)] font-black uppercase tracking-tighter">
-                                {suggestion.state}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[9px] lg:text-[11px] text-[var(--text-muted)] font-bold opacity-60 mt-0.5 lg:mt-1 uppercase tracking-wider truncate">
-                            {getCountryName(suggestion.country)}
-                          </p>
-                        </div>
-                      </div>
-                      <Sparkles
-                        size={14}
-                        className={cn(
-                          "h-3.5 w-3.5 lg:h-4 lg:w-4 transition-all duration-500 shrink-0",
-                          selectedIndex === idx ? "text-[var(--text-main)] opacity-100 scale-125" : "text-[var(--text-main)] opacity-10"
-                        )}
-                      />
-                    </motion.button>
+                      suggestion={suggestion}
+                      index={idx}
+                      selected={selectedIndex === idx}
+                      onSelect={handleSelect}
+                      onHover={handleSuggestionHover}
+                    />
                   ))}
                 </div>
               </motion.div>
@@ -305,7 +362,7 @@ export default function Header() {
         <NavLink to="/profile" className="relative group shrink-0" aria-label="Open profile">
           <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full overflow-hidden border-2 border-white/10 shadow-lg active:scale-95 transition-all cursor-pointer group-hover:border-[var(--text-main)]/50">
             <img
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(weather?.location.name || 'User')}`}
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${avatarSeed}`}
               alt="User profile avatar"
               decoding="async"
               className="w-full h-full object-cover bg-white/5"
@@ -318,3 +375,5 @@ export default function Header() {
 
   );
 }
+
+export default memo(Header);

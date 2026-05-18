@@ -249,4 +249,40 @@
     }
   }
 
+  @media (max-width: 767px) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    .glass,
+    .glass-panel,
+    .glass-card {
+      backdrop-filter: blur(min(var(--blur-intensity, 12px), 8px));
+      -webkit-backdrop-filter: blur(min(var(--blur-intensity, 12px), 8px));
+      box-shadow: 0 8px 28px -18px rgba(0, 0, 0, 0.24);
+    }
+
+    .shadow-2xl,
+    .shadow-xl {
+      --tw-shadow: 0 12px 32px -24px rgba(0, 0, 0, 0.35) !important;
+      --tw-shadow-colored: 0 12px 32px -24px var(--tw-shadow-color) !important;
+    }
+
+    .backdrop-blur-3xl,
+    .backdrop-blur-2xl,
+    .backdrop-blur-xl,
+    .backdrop-blur-\[12px\] {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .blur-3xl,
+    .blur-2xl,
+    .blur-xl,
+    .blur-\[100px\],
+    .blur-\[80px\] {
+      filter: blur(28px);
+    }
+  }
+
 }

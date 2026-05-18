@@ -135,10 +135,26 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const { weather } = useWeather();
   const { profile } = useUser();
   const { settings } = useSettings();
+  const {
+    aqiAlerts,
+    aqiThreshold,
+    dailySummaryAlerts,
+    language,
+    notificationSoundEnabled,
+    notificationsEnabled,
+    rainAlerts,
+    savedCityAlerts,
+    stormAlerts,
+    sunReminderAlerts,
+    temperatureAlerts,
+    tempThreshold,
+    windThreshold,
+  } = settings;
   const [notifications, setNotifications] = useState<CloudoraNotification[]>(readStoredNotifications);
   const [toasts, setToasts] = useState<CloudoraNotification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const savedCityScanRef = useRef('');
+  const unreadCount = useMemo(() => notifications.reduce((count, item) => count + (item.read ? 0 : 1), 0), [notifications]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications.slice(0, MAX_NOTIFICATIONS)));
@@ -149,7 +165,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addNotification = useCallback((notification: Omit<CloudoraNotification, 'id' | 'createdAt' | 'read'> & { read?: boolean }) => {
-    if (!settings.notificationsEnabled) return;
+    if (!notificationsEnabled) return;
 
     const nextNotification: CloudoraNotification = {
       ...notification,
@@ -169,10 +185,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       if (recentNotificationCount >= MAX_NOTIFICATIONS) return prev;
 
       setToasts((current) => [nextNotification, ...current.filter((item) => item.fingerprint !== nextNotification.fingerprint)].slice(0, MAX_TOASTS));
-      if (settings.notificationSoundEnabled) playSoftTone();
+      if (notificationSoundEnabled) playSoftTone();
       return [nextNotification, ...prev].slice(0, MAX_NOTIFICATIONS);
     });
-  }, [settings.notificationSoundEnabled, settings.notificationsEnabled]);
+  }, [notificationSoundEnabled, notificationsEnabled]);
 
   const markAsRead = useCallback((id: string) => {
     setNotifications((prev) => prev.map((item) => item.id === id ? { ...item, read: true } : item));
@@ -218,9 +234,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const toggleCenter = useCallback(() => setIsOpen((prev) => !prev), []);
 
   useEffect(() => {
-    if (!weather || !settings.notificationsEnabled) return;
+    if (!weather || !notificationsEnabled) return;
 
-    const isBangla = settings.language === 'bn';
+    const isBangla = language === 'bn';
     const copy = getCopy(isBangla);
     const city = weather.location.name;
     const locationKey = `${weather.location.lat.toFixed(2)}-${weather.location.lon.toFixed(2)}`;
@@ -245,7 +261,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    if (settings.dailySummaryAlerts) {
+    if (dailySummaryAlerts) {
       addWeatherNotification(
         'daily',
         'info',
@@ -255,19 +271,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       );
     }
 
-    if (settings.rainAlerts && (code >= 500 && code < 600 || weather.current.precipitation > 0)) {
+    if (rainAlerts && (code >= 500 && code < 600 || weather.current.precipitation > 0)) {
       addWeatherNotification('rain', 'warning', `rain-${dayKey}-${locationKey}-${code}`, copy.rainTitle, copy.rainMessage(city));
     }
 
-    if (settings.stormAlerts && (code >= 200 && code < 300 || weather.current.windSpeed >= settings.windThreshold)) {
+    if (stormAlerts && (code >= 200 && code < 300 || weather.current.windSpeed >= windThreshold)) {
       addWeatherNotification('severe', 'danger', `severe-${dayKey}-${locationKey}-${code}`, copy.severeTitle, copy.severeMessage(city));
     }
 
-    if (settings.aqiAlerts && weather.aqi && estimateAqi(weather.aqi.us) >= settings.aqiThreshold) {
+    if (aqiAlerts && weather.aqi && estimateAqi(weather.aqi.us) >= aqiThreshold) {
       addWeatherNotification('aqi', 'warning', `aqi-${dayKey}-${locationKey}-${weather.aqi.us}`, copy.aqiTitle, copy.aqiMessage(city));
     }
 
-    if (settings.temperatureAlerts) {
+    if (temperatureAlerts) {
       const memory = readTempMemory();
       const previousTemp = memory[locationKey];
       const nextTemp = Math.round(weather.current.temp);
@@ -289,7 +305,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(TEMP_MEMORY_KEY, JSON.stringify(memory));
     }
 
-    if (settings.sunReminderAlerts) {
+    if (sunReminderAlerts) {
       const now = Date.now() / 1000;
       const reminderWindow = 90 * 60;
       if (weather.current.sunrise > now && weather.current.sunrise - now <= reminderWindow) {
@@ -299,10 +315,23 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         addWeatherNotification('sun', 'success', `sunset-${dayKey}-${locationKey}`, copy.sunsetTitle, copy.sunsetMessage(city));
       }
     }
-  }, [addNotification, settings, weather]);
+  }, [
+    addNotification,
+    aqiAlerts,
+    aqiThreshold,
+    dailySummaryAlerts,
+    language,
+    notificationsEnabled,
+    rainAlerts,
+    stormAlerts,
+    sunReminderAlerts,
+    temperatureAlerts,
+    weather,
+    windThreshold,
+  ]);
 
   useEffect(() => {
-    if (!settings.notificationsEnabled || !settings.savedCityAlerts || profile.favorites.length === 0) return;
+    if (!notificationsEnabled || !savedCityAlerts || profile.favorites.length === 0) return;
 
     let isCancelled = false;
     const scanKey = `${getDayKey()}-${profile.favorites.map((city) => `${city.lat.toFixed(1)}:${city.lon.toFixed(1)}`).join('|')}`;
@@ -310,7 +339,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     savedCityScanRef.current = scanKey;
 
     const scanSavedCities = async () => {
-      const isBangla = settings.language === 'bn';
+      const isBangla = language === 'bn';
       const copy = getCopy(isBangla);
 
       await Promise.all(profile.favorites.slice(0, 5).map(async (city) => {
@@ -318,7 +347,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           const summary = await weatherService.getCurrentWeatherSummary(city.lat, city.lon);
           if (!summary || isCancelled) return;
           const condition = summary.condition.toLowerCase();
-          const noteworthy = condition.includes('rain') || condition.includes('storm') || condition.includes('snow') || summary.temp >= settings.tempThreshold;
+          const noteworthy = condition.includes('rain') || condition.includes('storm') || condition.includes('snow') || summary.temp >= tempThreshold;
           if (!noteworthy) return;
 
           addNotification({
@@ -343,7 +372,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       isCancelled = true;
       window.clearInterval(timer);
     };
-  }, [addNotification, profile.favorites, settings]);
+  }, [addNotification, language, notificationsEnabled, profile.favorites, savedCityAlerts, tempThreshold]);
 
   useEffect(() => {
     if (toasts.length === 0) return;
@@ -364,7 +393,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({
     notifications,
     toasts,
-    unreadCount: notifications.filter((item) => !item.read).length,
+    unreadCount,
     isOpen,
     addNotification,
     markAsRead,
@@ -381,6 +410,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }), [
     notifications,
     toasts,
+    unreadCount,
     isOpen,
     addNotification,
     markAsRead,

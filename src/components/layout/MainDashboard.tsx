@@ -6,6 +6,8 @@ import AirQuality from '../weather/AirQuality';
 import ErrorStateCard from '../errors/ErrorStateCard';
 import { motion } from 'motion/react';
 import { useSettings } from '../../context/SettingsContext';
+import { memo, useMemo } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const container = {
   hidden: { opacity: 0 },
@@ -22,10 +24,13 @@ const item = {
   show: { y: 0, opacity: 1 }
 };
 
-export default function MainDashboard() {
+function MainDashboard() {
   const { error, appError, retryFetchWeather, weather } = useWeather();
   const { settings } = useSettings();
+  const isMobile = useIsMobile();
   const isBangla = settings.language === 'bn';
+  const activeContainer = useMemo(() => isMobile ? { hidden: { opacity: 1 }, show: { opacity: 1 } } : container, [isMobile]);
+  const activeItem = useMemo(() => isMobile ? { hidden: { opacity: 1, y: 0 }, show: { opacity: 1, y: 0 } } : item, [isMobile]);
 
   if (error && !weather) {
     return (
@@ -41,27 +46,29 @@ export default function MainDashboard() {
 
   return (
     <motion.div
-      variants={container}
+      variants={activeContainer}
       initial="hidden"
       animate="show"
       className="flex-1 flex flex-col gap-[var(--spacing-gap-lg)] w-full pb-20"
     >
-      <motion.div variants={item}>
+      <motion.div variants={activeItem}>
         <WeatherHero />
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5 gap-[var(--spacing-gap-md)] lg:gap-[var(--spacing-gap-lg)]">
-        <motion.div variants={item} className="md:col-span-2 lg:col-span-1 xl:col-span-3">
+        <motion.div variants={activeItem} className="md:col-span-2 lg:col-span-1 xl:col-span-3">
           <HourlyForecast />
         </motion.div>
-        <motion.div variants={item} className="md:col-span-2 lg:col-span-1 xl:col-span-2">
+        <motion.div variants={activeItem} className="md:col-span-2 lg:col-span-1 xl:col-span-2">
           <AirQuality />
         </motion.div>
       </div>
 
-      <motion.div variants={item} className="flex-1">
+      <motion.div variants={activeItem} className="flex-1">
         <WeeklyForecast />
       </motion.div>
     </motion.div>
   );
 }
+
+export default memo(MainDashboard);

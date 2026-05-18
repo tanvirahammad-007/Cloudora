@@ -1,4 +1,6 @@
-export default function RadarStatus() {
+import { memo } from 'react';
+
+function RadarStatus() {
   return (
     <div className="absolute left-4 top-4 z-10 sm:left-8 sm:top-8">
       <div className="glass px-4 py-3 sm:px-6 sm:py-4 rounded-2xl sm:rounded-3xl border border-white/20 backdrop-blur-[12px] shadow-2xl flex items-center gap-3 sm:gap-4">
@@ -8,3 +10,5 @@ export default function RadarStatus() {
     </div>
   );
 }
+
+export default memo(RadarStatus);

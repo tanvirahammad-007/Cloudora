@@ -19,15 +19,17 @@ import { cn } from '../../lib/utils';
 import { convertTemp } from '../../lib/unitUtils';
 import { useSettings } from '../../context/SettingsContext';
 import ForecastChart from './ForecastChart';
+import { memo, useCallback } from 'react';
 
 interface TravelPlanCardProps {
   plan: TravelPlan;
   onDelete: (id: string) => void;
 }
 
-export default function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) {
+function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) {
   const { settings } = useSettings();
   const isBangla = settings.language === 'bn';
+  const handleDelete = useCallback(() => onDelete(plan.id), [onDelete, plan.id]);
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-emerald-500';
@@ -186,7 +188,7 @@ export default function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) 
 
         <div className="flex items-center justify-between pt-6 border-t border-[var(--border-color)]">
           <button 
-            onClick={() => onDelete(plan.id)}
+            onClick={handleDelete}
             type="button"
             aria-label={`Delete trip plan for ${plan.city.name}`}
             className="flex items-center gap-2 text-red-500 hover:text-white hover:bg-red-500 px-5 py-3 rounded-2xl transition-all text-[9px] font-black uppercase tracking-widest"
@@ -204,3 +206,5 @@ export default function TravelPlanCard({ plan, onDelete }: TravelPlanCardProps) 
     </article>
   );
 }
+
+export default memo(TravelPlanCard);

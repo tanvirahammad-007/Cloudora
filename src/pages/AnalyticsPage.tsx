@@ -2,11 +2,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useWeather } from '../context/WeatherContext';
 import { useSettings } from '../context/SettingsContext';
 import { Activity, Filter, Download } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { unsplashService } from '../services/unsplashService';
-import ThermalVelocityChart from '../components/analytics/ThermalVelocityChart';
-import DailySummaryCard from '../components/analytics/DailySummaryCard';
-import AnalyticalStatsGrid from '../components/analytics/AnalyticalStatsGrid';
+
+const ThermalVelocityChart = lazy(() => import('../components/analytics/ThermalVelocityChart'));
+const DailySummaryCard = lazy(() => import('../components/analytics/DailySummaryCard'));
+const AnalyticalStatsGrid = lazy(() => import('../components/analytics/AnalyticalStatsGrid'));
 
 const AnalyticsSkeleton = () => (
   <div className="flex-1 p-8 h-full overflow-y-auto hide-scrollbar animate-pulse">
@@ -34,6 +35,10 @@ const AnalyticsSkeleton = () => (
       </div>
     </div>
   </div>
+);
+
+const AnalyticsPanelFallback = ({ className = '' }: { className?: string }) => (
+  <div className={`glass-panel min-h-[320px] animate-pulse rounded-[2.5rem] border border-[var(--border-color)] bg-white/5 ${className}`} />
 );
 
 export default function AnalyticsPage() {
@@ -140,13 +145,19 @@ export default function AnalyticsPage() {
         </header>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          <ThermalVelocityChart data={chartData} />
+          <Suspense fallback={<AnalyticsPanelFallback className="xl:col-span-2" />}>
+            <ThermalVelocityChart data={chartData} />
+          </Suspense>
           <div className="space-y-8">
-            <DailySummaryCard weather={weather} chartData={chartData} />
+            <Suspense fallback={<AnalyticsPanelFallback />}>
+              <DailySummaryCard weather={weather} chartData={chartData} />
+            </Suspense>
           </div>
         </div>
 
-        <AnalyticalStatsGrid windSpeed={weather.current.windSpeed} />
+        <Suspense fallback={<AnalyticsPanelFallback />}>
+          <AnalyticalStatsGrid windSpeed={weather.current.windSpeed} />
+        </Suspense>
       </div>
     </motion.div>
   );

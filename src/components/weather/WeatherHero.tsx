@@ -3,12 +3,13 @@ import { useSettings } from '../../context/SettingsContext';
 import { useUser } from '../../context/UserContext';
 import { Wind, Droplets, Thermometer, Sunrise, Sunset, AlertCircle, MapPin, Heart, CloudRain, CloudSnow, CloudLightning, CloudFog, Sun, Moon, CloudSun, CloudMoon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { unsplashService } from '../../services/unsplashService';
 import { cn } from '../../lib/utils';
 import { getCountryName } from '../../lib/geoUtils';
 import { convertTemp, convertWindSpeed } from '../../lib/unitUtils';
 import SafeImage from '../common/SafeImage';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const getHeroSticker = (code: number, isDay: boolean) => {
   if (code >= 200 && code < 300) return { Icon: CloudLightning, labelEn: 'Storm now', labelBn: 'এখন ঝড়', color: 'text-violet-400', bg: 'bg-violet-400/[0.12]', border: 'border-violet-400/25' };
@@ -76,13 +77,14 @@ const formatLocationTime = (date: Date, timezone?: string) => {
   }
 };
 
-export default function WeatherHero() {
+function WeatherHero() {
   const { weather, loading, error } = useWeather();
   const { settings } = useSettings();
   const { toggleFavorite, isFavorite } = useUser();
   const [bgImage, setBgImage] = useState<string | null>(null);
   const [bgImageCandidates, setBgImageCandidates] = useState<string[]>([]);
   const [localTime, setLocalTime] = useState<string>('');
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!weather?.location.timezone) return;
@@ -324,7 +326,7 @@ export default function WeatherHero() {
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
           className="relative"
         >
-          <div className="absolute inset-0 bg-[var(--text-main)]/5 blur-[40px] lg:blur-[80px] rounded-full scale-150 opacity-40"></div>
+          <div className={cn("absolute inset-0 bg-[var(--text-main)]/5 rounded-full scale-150 opacity-40", isMobile ? "blur-[28px]" : "blur-[40px] lg:blur-[80px]")}></div>
           <SafeImage
             src={`https://openweathermap.org/img/wn/${weather.current.icon}@4x.png`}
             alt={weather.current.condition}
@@ -337,3 +339,5 @@ export default function WeatherHero() {
     </motion.div>
   );
 }
+
+export default memo(WeatherHero);

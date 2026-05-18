@@ -5,6 +5,8 @@ import { motion } from 'motion/react';
 import { convertTemp } from '../../lib/unitUtils';
 import ErrorStateCard from '../errors/ErrorStateCard';
 import SafeImage from '../common/SafeImage';
+import { memo, useMemo } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const ForecastSkeleton = () => (
   <div className="glass-panel p-10 flex flex-col rounded-[4rem] border border-[var(--border-color)] bg-[var(--panel-bg)] h-full overflow-hidden animate-pulse">
@@ -34,9 +36,17 @@ const ForecastSkeleton = () => (
   </div>
 );
 
-export default function WeeklyForecast() {
+function WeeklyForecast() {
   const { weather, loading, retryFetchWeather } = useWeather();
   const { settings } = useSettings();
+  const isMobile = useIsMobile();
+  const itemAnimationsEnabled = settings.animationsEnabled && !isMobile;
+  const forecastDays = useMemo(() => weather?.daily.map((day, idx) => ({
+    ...day,
+    dateLabel: idx === 0 ? 'Today' : new Date(day.date).toLocaleDateString(settings.language === 'en' ? 'en-US' : settings.language, { weekday: 'long' }),
+    displayMaxTemp: Math.round(convertTemp(day.maxTemp, settings.tempUnit)),
+    displayMinTemp: Math.round(convertTemp(day.minTemp, settings.tempUnit)),
+  })) || [], [settings.language, settings.tempUnit, weather?.daily]);
 
   if (loading && !weather) return <ForecastSkeleton />;
   if (!weather) return null;
@@ -70,9 +80,9 @@ export default function WeeklyForecast() {
       </div>
 
       <div className="flex flex-col gap-[var(--spacing-gap-sm)] flex-1 overflow-y-auto custom-scrollbar pr-1" role="list">
-        {weather.daily.map((day, idx) => (
+        {forecastDays.map((day, idx) => (
           <motion.div 
-            initial={settings.animationsEnabled ? { opacity: 0, scale: 0.98 } : { opacity: 1, scale: 1 }}
+            initial={itemAnimationsEnabled ? { opacity: 0, scale: 0.98 } : { opacity: 1, scale: 1 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: idx * 0.08, duration: 0.6 }}
             key={day.date} 
@@ -91,7 +101,7 @@ export default function WeeklyForecast() {
               </div>
               <div className="min-w-0">
                 <p className="typo-label mb-1 lg:mb-2 opacity-30 group-hover:opacity-60 transition-opacity truncate">
-                  {idx === 0 ? 'Today' : new Date(day.date).toLocaleDateString(settings.language === 'en' ? 'en-US' : settings.language, { weekday: 'long' })}
+                  {day.dateLabel}
                 </p>
                 <h4 className="text-lg lg:typo-h3 truncate max-w-[200px]">
                   {day.condition}
@@ -102,13 +112,13 @@ export default function WeeklyForecast() {
             <div className="flex items-center gap-8 lg:gap-10 relative z-10 ml-auto sm:ml-0">
               <div className="flex flex-col items-end">
                 <span className="text-2xl lg:typo-h2 leading-none">
-                  {Math.round(convertTemp(day.maxTemp, settings.tempUnit))}°
+                  {day.displayMaxTemp}°
                 </span>
                 <span className="text-[9px] lg:typo-label mt-1 lg:mt-2 text-amber-400 opacity-100">Peak</span>
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-xl lg:typo-h3 leading-none opacity-20">
-                  {Math.round(convertTemp(day.minTemp, settings.tempUnit))}°
+                  {day.displayMinTemp}°
                 </span>
                 <span className="text-[9px] lg:typo-label mt-1 lg:mt-2 text-sky-400">Dip</span>
               </div>
@@ -119,3 +129,5 @@ export default function WeeklyForecast() {
     </section>
   );
 }
+
+export default memo(WeeklyForecast);

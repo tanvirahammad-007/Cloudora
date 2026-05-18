@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Bell, BellRing, CheckCheck, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
@@ -16,7 +16,7 @@ const categories: Array<{ id: NotificationCategory | 'all'; label: string }> = [
   { id: 'saved', label: 'Saved' },
 ];
 
-export default function NotificationCenter() {
+function NotificationCenter() {
   const {
     notifications,
     unreadCount,
@@ -32,6 +32,9 @@ export default function NotificationCenter() {
   const { settings, updateSettings } = useSettings();
   const [activeCategory, setActiveCategory] = useState<NotificationCategory | 'all'>('all');
   const containerRef = useRef<HTMLDivElement>(null);
+  const handleToggleSound = useCallback(() => {
+    updateSettings({ notificationSoundEnabled: !settings.notificationSoundEnabled });
+  }, [settings.notificationSoundEnabled, updateSettings]);
 
   useEffect(() => {
     const onClickOutside = (event: MouseEvent) => {
@@ -107,7 +110,7 @@ export default function NotificationCenter() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => updateSettings({ notificationSoundEnabled: !settings.notificationSoundEnabled })}
+                    onClick={handleToggleSound}
                     className="rounded-xl border border-[var(--border-color)] bg-[var(--text-main)]/[0.04] p-2.5 text-[var(--text-muted)] transition-all hover:text-sky-400"
                     title={settings.notificationSoundEnabled ? 'Turn sound off' : 'Turn sound on'}
                   >
@@ -171,7 +174,7 @@ export default function NotificationCenter() {
             </div>
 
             <div className="relative max-h-[58vh] space-y-3 overflow-y-auto p-4 custom-scrollbar sm:max-h-[520px]">
-              <AnimatePresence mode="popLayout">
+              <AnimatePresence mode="popLayout" initial={false}>
                 {filteredNotifications.length > 0 ? (
                   filteredNotifications.map((notification) => (
                     <div key={notification.id}>
@@ -207,3 +210,5 @@ export default function NotificationCenter() {
     </div>
   );
 }
+
+export default memo(NotificationCenter);

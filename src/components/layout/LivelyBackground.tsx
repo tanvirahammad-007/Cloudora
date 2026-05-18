@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { useSettings } from '../../context/SettingsContext';
 import { Cloud, CloudRain, Wind } from 'lucide-react';
 import { memo } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const windCurrents = [
   { top: '12%', left: '-12%', width: '44vw', rotate: '-8deg', delay: 0, duration: 18, className: 'via-sky-400/20 dark:via-cyan-300/12' },
@@ -39,7 +40,13 @@ const shimmerLines = [
 function LivelyBackground() {
   const { settings } = useSettings();
   const isDark = settings.theme === 'dark';
+  const isMobile = useIsMobile();
   const animationsEnabled = settings.animationsEnabled;
+  const activeWindCurrents = isMobile ? windCurrents.slice(0, 2) : windCurrents;
+  const activeCloudDrifts = isMobile ? cloudDrifts.slice(0, 1) : cloudDrifts;
+  const activeRealisticClouds = isMobile ? realisticClouds.slice(0, 2) : realisticClouds;
+  const activeStormClouds = isMobile ? lightModeStormClouds.slice(0, 1) : lightModeStormClouds;
+  const activeShimmerLines = isMobile ? shimmerLines.slice(0, 2) : shimmerLines;
 
   if (!settings.dynamicBackground) return null;
 
@@ -47,7 +54,7 @@ function LivelyBackground() {
     <div className="fixed inset-0 z-0 isolate overflow-hidden pointer-events-none">
       <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_left,rgba(14,165,233,0.1),transparent_38%),radial-gradient(ellipse_at_bottom_right,rgba(16,185,129,0.08),transparent_34%)] dark:bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.1),transparent_36%),radial-gradient(ellipse_at_bottom_right,rgba(168,85,247,0.08),transparent_34%)]" />
 
-      {windCurrents.map((current) => (
+      {activeWindCurrents.map((current) => (
         <motion.div
           key={`${current.top}-${current.left}`}
           animate={animationsEnabled ? {
@@ -70,7 +77,7 @@ function LivelyBackground() {
         />
       ))}
 
-      {cloudDrifts.map(({ Icon, ...cloud }) => (
+      {activeCloudDrifts.map(({ Icon, ...cloud }) => (
         <motion.div
           key={`${cloud.top}-${cloud.left}`}
           animate={animationsEnabled ? {
@@ -91,7 +98,7 @@ function LivelyBackground() {
         </motion.div>
       ))}
 
-      {realisticClouds.map((cloud) => (
+      {activeRealisticClouds.map((cloud) => (
         (() => {
           const cloudOpacity = isDark ? cloud.opacity * 0.3 : cloud.opacity;
 
@@ -124,7 +131,7 @@ function LivelyBackground() {
         })()
       ))}
 
-      {lightModeStormClouds.map((cloud) => (
+      {activeStormClouds.map((cloud) => (
         <motion.div
           key={`${cloud.top}-${cloud.left}-storm`}
           animate={animationsEnabled ? {
@@ -151,7 +158,7 @@ function LivelyBackground() {
         </motion.div>
       ))}
 
-      {shimmerLines.map((line) => (
+      {activeShimmerLines.map((line) => (
         <motion.div
           key={`${line.top}-${line.left}`}
           animate={animationsEnabled ? { x: ['-20%', '120%'], opacity: [0, 0.32, 0] } : undefined}

@@ -1,10 +1,11 @@
 import { cn } from '../../lib/utils';
+import { memo } from 'react';
 
 interface MapLegendProps {
   items: { label: string; color: string; range: string }[];
 }
 
-export default function MapLegend({ items }: MapLegendProps) {
+function MapLegend({ items }: MapLegendProps) {
   return (
     <div className="absolute bottom-4 left-4 right-4 z-10 flex justify-end sm:bottom-8 sm:left-auto sm:right-8">
       <div className="glass w-full max-w-[240px] p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-white/20 backdrop-blur-[12px] shadow-2xl">
@@ -24,3 +25,5 @@ export default function MapLegend({ items }: MapLegendProps) {
     </div>
   );
 }
+
+export default memo(MapLegend);

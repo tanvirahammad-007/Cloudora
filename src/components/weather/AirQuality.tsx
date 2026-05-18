@@ -3,10 +3,11 @@ import { useSettings } from '../../context/SettingsContext';
 import { Activity, Zap, AlertTriangle, ShieldCheck, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { unsplashService } from '../../services/unsplashService';
 import ErrorStateCard from '../errors/ErrorStateCard';
 import SafeImage from '../common/SafeImage';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const getAQILevel = (aqi: number, isBangla: boolean) => {
   // OpenWeatherMap AQI is 1-5
@@ -97,10 +98,12 @@ const AirQualitySkeleton = () => (
   </div>
 );
 
-export default function AirQuality() {
+function AirQuality() {
   const { weather, loading, retryFetchWeather } = useWeather();
   const { settings } = useSettings();
   const [bgImage, setBgImage] = useState<string | null>(null);
+  const isMobile = useIsMobile();
+  const itemAnimationsEnabled = settings.animationsEnabled && !isMobile;
 
   useEffect(() => {
     if (!weather) return;
@@ -240,7 +243,7 @@ export default function AirQuality() {
           {metrics.map((m, i) => (
             <motion.div
               key={m.label}
-              initial={{ opacity: 0, y: 20 }}
+              initial={itemAnimationsEnabled ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 + i * 0.1 }}
               className="flex flex-col gap-3 p-4 lg:p-5 rounded-2xl lg:rounded-[1.75rem] bg-[var(--text-main)]/[0.04] border border-transparent hover:border-[var(--border-color)] transition-all duration-500 group/metric cursor-default min-w-0"
@@ -262,3 +265,5 @@ export default function AirQuality() {
     </motion.div>
   );
 }
+
+export default memo(AirQuality);

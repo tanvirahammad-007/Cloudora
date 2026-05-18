@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { CloudoraNotification, NotificationCategory, NotificationSeverity } from '../../types/notification';
 import { cn } from '../../lib/utils';
+import { memo, useCallback, useMemo } from 'react';
+import type { MouseEvent } from 'react';
 
 interface NotificationCardProps {
   notification: CloudoraNotification;
@@ -55,12 +57,25 @@ export const formatRelativeTime = (date: string) => {
   return `${Math.floor(diff / day)}d ago`;
 };
 
-export default function NotificationCard({ notification, onToggleRead, onRemove, onClearCategory, compact }: NotificationCardProps) {
-  const Icon = iconByCategory[notification.category] || AlertTriangle;
+function NotificationCard({ notification, onToggleRead, onRemove, onClearCategory, compact }: NotificationCardProps) {
+  const Icon = useMemo(() => iconByCategory[notification.category] || AlertTriangle, [notification.category]);
+  const relativeTime = useMemo(() => formatRelativeTime(notification.createdAt), [notification.createdAt]);
+  const handleRemove = useCallback((event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onRemove?.(notification.id);
+  }, [notification.id, onRemove]);
+  const handleClearCategory = useCallback((event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onClearCategory?.(notification.category);
+  }, [notification.category, onClearCategory]);
+  const handleToggleRead = useCallback((event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onToggleRead(notification.id);
+  }, [notification.id, onToggleRead]);
 
   return (
     <motion.article
-      layout
+      layout={false}
       initial={{ opacity: 0, y: 12, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.96 }}
@@ -90,7 +105,7 @@ export default function NotificationCard({ notification, onToggleRead, onRemove,
               </p>
             </div>
             <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)] opacity-45">
-              {formatRelativeTime(notification.createdAt)}
+              {relativeTime}
             </span>
           </div>
 
@@ -108,10 +123,7 @@ export default function NotificationCard({ notification, onToggleRead, onRemove,
               {onRemove && (
                 <button
                   type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onRemove(notification.id);
-                  }}
+                  onClick={handleRemove}
                   className="rounded-lg p-2 text-[var(--text-muted)] transition-all hover:bg-red-500/10 hover:text-red-400"
                   title="Remove notification"
                 >
@@ -121,10 +133,7 @@ export default function NotificationCard({ notification, onToggleRead, onRemove,
               {onClearCategory && (
                 <button
                   type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onClearCategory(notification.category);
-                  }}
+                  onClick={handleClearCategory}
                   className="rounded-lg p-2 text-[var(--text-muted)] transition-all hover:bg-red-500/10 hover:text-red-400"
                   title="Clear this category"
                 >
@@ -133,10 +142,7 @@ export default function NotificationCard({ notification, onToggleRead, onRemove,
               )}
               <button
                 type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onToggleRead(notification.id);
-                }}
+                onClick={handleToggleRead}
                 className="rounded-lg p-2 text-[var(--text-muted)] transition-all hover:bg-[var(--text-main)]/10 hover:text-[var(--text-main)]"
                 title={notification.read ? 'Mark unread' : 'Mark read'}
               >
@@ -149,3 +155,5 @@ export default function NotificationCard({ notification, onToggleRead, onRemove,
     </motion.article>
   );
 }
+
+export default memo(NotificationCard);

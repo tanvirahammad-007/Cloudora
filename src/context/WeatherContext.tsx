@@ -35,7 +35,7 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [appError, setAppError] = useState<AppError | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [currentParams, setCurrentParams] = useState<{ lat: number; lon: number; cityName: string } | null>(null);
+  const currentParamsRef = useRef<{ lat: number; lon: number; cityName: string } | null>(null);
   const activeRequestRef = useRef(0);
   const mountedRef = useRef(true);
 
@@ -64,7 +64,7 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
       if (!isLatestRequest()) return;
       setWeather(data);
       setLastUpdated(new Date());
-      setCurrentParams({ lat, lon, cityName });
+      currentParamsRef.current = { lat, lon, cityName };
     } catch (err: any) {
       if (!isLatestRequest()) return;
       console.error(err);
@@ -87,24 +87,26 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const retryFetchWeather = useCallback(async () => {
+    const currentParams = currentParamsRef.current;
     if (currentParams) {
       await fetchWeather(currentParams.lat, currentParams.lon, currentParams.cityName);
       return;
     }
 
     await fetchWeather(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon, DEFAULT_LOCATION.name);
-  }, [currentParams, fetchWeather]);
+  }, [fetchWeather]);
 
   // Polling for real-time updates every 30 minutes
   useEffect(() => {
     const interval = setInterval(() => {
+      const currentParams = currentParamsRef.current;
       if (currentParams) {
         fetchWeather(currentParams.lat, currentParams.lon, currentParams.cityName);
       }
     }, 30 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [currentParams, fetchWeather]);
+  }, [fetchWeather]);
 
   const addToHistory = useCallback((city: CitySuggestion) => {
     setSearchHistory((prev) => {

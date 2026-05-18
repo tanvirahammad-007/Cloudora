@@ -3,16 +3,17 @@ import { cn } from '../../lib/utils';
 import { motion } from 'motion/react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
+import { memo, useMemo } from 'react';
 
 interface SidebarProps {
   className?: string;
   isMobile?: boolean;
 }
 
-export default function Sidebar({ className, isMobile }: SidebarProps) {
+function Sidebar({ className, isMobile }: SidebarProps) {
   const { t } = useTranslation();
 
-  const menuItems = [
+  const menuItems = useMemo(() => [
     { icon: LayoutGrid, label: t('overview'), path: '/', color: 'from-black to-gray-800' },
     { icon: Wind, label: t('insights'), path: '/analytics', color: 'from-gray-700 to-gray-900' },
     { icon: Globe, label: t('radar'), path: '/maps', color: 'from-gray-600 to-gray-800' },
@@ -20,7 +21,7 @@ export default function Sidebar({ className, isMobile }: SidebarProps) {
     { icon: ArrowLeftRight, label: t('expeditions'), path: '/travel', color: 'from-gray-400 to-gray-600' },
     { icon: User, label: t('identity'), path: '/profile', color: 'from-gray-400 to-gray-600' },
     { icon: Settings, label: t('configuration'), path: '/settings', color: 'from-gray-300 to-gray-500' },
-  ];
+  ], [t]);
 
   if (isMobile) {
     return (
@@ -92,3 +93,5 @@ export default function Sidebar({ className, isMobile }: SidebarProps) {
     </aside>
   );
 }
+
+export default memo(Sidebar);

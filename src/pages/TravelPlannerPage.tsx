@@ -1,18 +1,25 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import NewExpeditionForm from '../components/travel/NewExpeditionForm';
-import SmartInsightCard from '../components/travel/SmartInsightCard';
-import TravelPlanCard from '../components/travel/TravelPlanCard';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { TravelPlan } from '../types/travel';
 import { getPlans, deletePlan } from '../lib/travelUtils';
 import { Luggage, Compass, Activity, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import { useIsMobile } from '../hooks/useIsMobile';
+
+const NewExpeditionForm = lazy(() => import('../components/travel/NewExpeditionForm'));
+const SmartInsightCard = lazy(() => import('../components/travel/SmartInsightCard'));
+const TravelPlanCard = lazy(() => import('../components/travel/TravelPlanCard'));
+
+const TravelPanelFallback = ({ className = '' }: { className?: string }) => (
+  <div className={`glass-panel min-h-[260px] animate-pulse rounded-[2.5rem] border border-[var(--border-color)] bg-white/5 ${className}`} />
+);
 
 export default function TravelPlannerPage() {
   const [activeTab, setActiveTab] = useState<'upcoming' | 'explored'>('upcoming');
   const [plans, setPlans] = useState<TravelPlan[]>([]);
   const { settings } = useSettings();
+  const isMobile = useIsMobile();
   const isBangla = settings.language === 'bn';
 
   const loadPlans = useCallback(() => {
@@ -89,7 +96,9 @@ export default function TravelPlannerPage() {
           
           {/* Left Column: Form & Insights */}
           <div className="xl:col-span-4 space-y-8">
-            <NewExpeditionForm onPlanCreated={loadPlans} />
+            <Suspense fallback={<TravelPanelFallback className="min-h-[560px]" />}>
+              <NewExpeditionForm onPlanCreated={loadPlans} />
+            </Suspense>
             
             <div className="glass-panel p-10 rounded-[3.5rem] bg-indigo-500/5 border border-indigo-500/10 overflow-hidden relative group">
                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
@@ -112,7 +121,9 @@ export default function TravelPlannerPage() {
                </div>
             </div>
 
-            <SmartInsightCard />
+            <Suspense fallback={<TravelPanelFallback />}>
+              <SmartInsightCard />
+            </Suspense>
           </div>
 
           {/* Right Column: Plans Grid */}
@@ -144,16 +155,18 @@ export default function TravelPlannerPage() {
                   {filteredPlans.map((plan) => (
                     <motion.div
                       key={plan.id}
-                      layout
+                      layout={!isMobile}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     >
-                      <TravelPlanCard 
-                        plan={plan} 
-                        onDelete={handleDelete} 
-                      />
+                      <Suspense fallback={<TravelPanelFallback className="h-full" />}>
+                        <TravelPlanCard 
+                          plan={plan} 
+                          onDelete={handleDelete} 
+                        />
+                      </Suspense>
                     </motion.div>
                   ))}
                 </AnimatePresence>

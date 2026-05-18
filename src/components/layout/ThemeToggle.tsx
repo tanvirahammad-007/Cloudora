@@ -1,10 +1,13 @@
 import { useSettings } from '../../context/SettingsContext';
 import { Sun, Moon } from 'lucide-react';
 import { motion } from 'motion/react';
+import { memo } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
-export default function ThemeToggle() {
+function ThemeToggle() {
   const { settings, toggleTheme } = useSettings();
   const { theme } = settings;
+  const isMobile = useIsMobile();
 
   return (
     <button
@@ -29,7 +32,7 @@ export default function ThemeToggle() {
       
       <motion.div
         animate={{ x: theme === 'light' ? 0 : 40 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        transition={isMobile ? { duration: 0.18, ease: [0.22, 1, 0.36, 1] } : { type: 'spring', stiffness: 500, damping: 30 }}
         className="absolute left-1 w-8 h-8 rounded-full bg-[var(--text-main)] shadow-[0_0_15px_rgba(255,255,255,0.1)] flex items-center justify-center border border-[var(--border-color)]"
       >
         {theme === 'light' ? (
@@ -41,3 +44,5 @@ export default function ThemeToggle() {
     </button>
   );
 }
+
+export default memo(ThemeToggle);

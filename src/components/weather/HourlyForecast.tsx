@@ -5,7 +5,8 @@ import { motion } from 'motion/react';
 import { convertTemp } from '../../lib/unitUtils';
 import ErrorStateCard from '../errors/ErrorStateCard';
 import SafeImage from '../common/SafeImage';
-import { useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const HourlyForecastSkeleton = () => (
   <div className="glass-panel p-10 flex flex-col rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] h-full min-h-[360px] animate-pulse">
@@ -29,9 +30,23 @@ const HourlyForecastSkeleton = () => (
   </div>
 );
 
-export default function HourlyForecast() {
+function HourlyForecast() {
   const { weather, loading, retryFetchWeather } = useWeather();
   const { settings } = useSettings();
+  const isMobile = useIsMobile();
+  const itemAnimationsEnabled = settings.animationsEnabled && !isMobile;
+  const chartData = useMemo(() => weather?.hourly.map(h => ({
+    time: new Date(h.time).getHours() + ':00',
+    temp: Math.round(convertTemp(h.temp, settings.tempUnit)),
+  })) || [], [settings.tempUnit, weather?.hourly]);
+  const hourlyCards = useMemo(() => weather?.hourly.map((h) => ({
+    ...h,
+    displayTemp: Math.round(convertTemp(h.temp, settings.tempUnit)),
+  })) || [], [settings.tempUnit, weather?.hourly]);
+  const formatTime = useCallback((timeStr: string) => {
+    const date = new Date(timeStr);
+    return date.toLocaleTimeString([], { hour: 'numeric', hour12: true });
+  }, []);
 
   if (loading && !weather) return <HourlyForecastSkeleton />;
   if (!weather) return null;
@@ -50,16 +65,6 @@ export default function HourlyForecast() {
     );
   }
 
-  const chartData = useMemo(() => weather.hourly.map(h => ({
-    time: new Date(h.time).getHours() + ':00',
-    temp: Math.round(convertTemp(h.temp, settings.tempUnit)),
-  })), [settings.tempUnit, weather.hourly]);
-
-  const formatTime = useCallback((timeStr: string) => {
-    const date = new Date(timeStr);
-    return date.toLocaleTimeString([], { hour: 'numeric', hour12: true });
-  }, []);
-
   return (
     <section aria-label="Hourly forecast" className="glass-panel p-[var(--spacing-gap-md)] flex flex-col rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/80 h-full min-h-[360px] group transition-all duration-700 hover:shadow-2xl hover:shadow-[var(--text-main)]/5 relative overflow-hidden">
       <div className="flex items-center justify-between mb-[var(--spacing-gap-md)]">
@@ -73,10 +78,10 @@ export default function HourlyForecast() {
       </div>
       
       <div className="flex gap-[var(--spacing-gap-md)] overflow-x-auto pb-8 custom-scrollbar -mx-4 px-4 z-10 relative" role="list" aria-label="Hourly weather cards">
-        {weather.hourly.map((h, i) => (
+        {hourlyCards.map((h, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, y: 10 }}
+            initial={itemAnimationsEnabled ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.02 }}
             className="flex flex-col items-center justify-between min-w-[104px] sm:min-w-[110px] p-6 sm:p-8 rounded-[2.5rem] sm:rounded-[3rem] bg-[var(--text-main)]/[0.02] border border-[var(--border-color)] hover:bg-[var(--text-main)]/[0.04] hover:border-[var(--text-main)]/20 transition-all duration-500 cursor-default group/item"
@@ -94,7 +99,7 @@ export default function HourlyForecast() {
                 className="w-14 h-14 drop-shadow-xl relative z-10 invert dark:invert-0 brightness-[1.2]"
               />
             </div>
-            <span className="typo-h3 leading-none">{Math.round(convertTemp(h.temp, settings.tempUnit))}°</span>
+            <span className="typo-h3 leading-none">{h.displayTemp}°</span>
           </motion.div>
         ))}
       </div>
@@ -142,3 +147,5 @@ export default function HourlyForecast() {
     </section>
   );
 }
+
+export default memo(HourlyForecast);

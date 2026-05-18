@@ -3,7 +3,7 @@ import { useWeather } from '../../context/WeatherContext';
 import { useSettings } from '../../context/SettingsContext';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { unsplashService } from '../../services/unsplashService';
 import { getCountryName } from '../../lib/geoUtils';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +12,7 @@ interface RightPanelProps {
   className?: string;
 }
 
-export default function RightPanel({ className }: RightPanelProps) {
+function RightPanel({ className }: RightPanelProps) {
   const { searchHistory, fetchWeather, weather, loading } = useWeather();
   const { settings } = useSettings();
   const navigate = useNavigate();
@@ -31,6 +31,15 @@ export default function RightPanel({ className }: RightPanelProps) {
     upgradeText: isBangla ? 'আরও পুরোনো আবহাওয়া তথ্য ও ভালো পূর্বাভাস দেখুন।' : 'See more weather history and better forecasts.',
     upgradeButton: isBangla ? 'আপগ্রেড' : 'Upgrade',
   }), [isBangla]);
+  const countryStats = useMemo(() => weather?.countryDetails ? [
+    { icon: Landmark, label: copy.capital, value: weather.countryDetails.capital },
+    { icon: Users, label: copy.people, value: `${(weather.countryDetails.population / 1000000).toFixed(1)}M` },
+    { icon: Coins, label: copy.money, value: weather.countryDetails.currencies[0]?.split('(')[0] || '-' },
+    { icon: Clock, label: copy.zone, value: weather.countryDetails.timezones[0] || '-' },
+  ] : [], [copy.capital, copy.money, copy.people, copy.zone, weather?.countryDetails]);
+  const handleHistorySelect = useCallback((city: { lat: number; lon: number; name: string }) => {
+    fetchWeather(city.lat, city.lon, city.name);
+  }, [fetchWeather]);
 
   useEffect(() => {
     if (!weather) return;
@@ -66,14 +75,14 @@ export default function RightPanel({ className }: RightPanelProps) {
             <AnimatePresence mode="popLayout" initial={false}>
               {searchHistory.map((city, idx) => (
                 <motion.button
-                  layout
+                  layout={false}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ scale: 0.9, opacity: 0 }}
                   transition={{ delay: idx * 0.05, duration: 0.5 }}
                   key={`${city.lat}-${city.lon}-${idx}`}
                   type="button"
-                  onClick={() => fetchWeather(city.lat, city.lon, city.name)}
+                  onClick={() => handleHistorySelect(city)}
                   className="flex items-center gap-5 p-4 rounded-3xl bg-[var(--text-main)]/[0.02] hover:bg-[var(--text-main)]/[0.05] border border-transparent hover:border-[var(--border-color)] transition-all duration-500 group/item active:scale-[0.98]"
                 >
                   <div className="w-11 h-11 rounded-2xl bg-[var(--text-main)]/[0.05] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] group-hover/item:bg-[var(--text-main)] group-hover/item:text-[var(--bg-color)] transition-all duration-500 shadow-sm">
@@ -149,12 +158,7 @@ export default function RightPanel({ className }: RightPanelProps) {
             </motion.div>
 
             <div className="grid grid-cols-2 gap-4">
-              {[
-                { icon: Landmark, label: copy.capital, value: weather.countryDetails.capital },
-                { icon: Users, label: copy.people, value: `${(weather.countryDetails.population / 1000000).toFixed(1)}M` },
-                { icon: Coins, label: copy.money, value: weather.countryDetails.currencies[0]?.split('(')[0] || '-' },
-                { icon: Clock, label: copy.zone, value: weather.countryDetails.timezones[0] || '-' },
-              ].map((stat, i) => (stat.value && (
+              {countryStats.map((stat, i) => (stat.value && (
                 <div key={i} className="flex flex-col gap-2 p-5 rounded-3xl bg-[var(--text-main)]/[0.02] border border-transparent hover:border-[var(--border-color)] hover:bg-[var(--text-main)]/[0.04] transition-all duration-500 group/stat">
                    <div className="flex items-center gap-2 opacity-30 group-hover:opacity-60 transition-opacity">
                     <stat.icon size={12} strokeWidth={2.5} />
@@ -190,3 +194,5 @@ export default function RightPanel({ className }: RightPanelProps) {
     </aside>
   );
 }
+
+export default memo(RightPanel);

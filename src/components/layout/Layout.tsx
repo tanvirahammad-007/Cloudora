@@ -3,7 +3,8 @@ import Header from './Header';
 import { useWeather } from '../../context/WeatherContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Suspense } from 'react';
+import { memo, Suspense } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const OutletFallback = () => (
   <div className="flex min-h-[50vh] items-center justify-center">
@@ -11,9 +12,10 @@ const OutletFallback = () => (
   </div>
 );
 
-export default function Layout() {
+function Layout() {
   const { loading } = useWeather();
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   return (
     <div className="relative z-10 min-h-screen overflow-hidden font-sans">
@@ -55,7 +57,7 @@ export default function Layout() {
        <motion.div 
          initial={{ y: 200 }}
          animate={{ y: 0 }}
-         transition={{ type: 'spring', damping: 25, stiffness: 200, delay: 0.5 }}
+         transition={isMobile ? { duration: 0.24, ease: [0.22, 1, 0.36, 1] } : { type: 'spring', damping: 25, stiffness: 200, delay: 0.5 }}
          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 items-center overflow-x-auto rounded-3xl border border-[var(--border-color)] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.3)] glass hide-scrollbar md:hidden sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]"
        >
          <Sidebar isMobile />
@@ -63,3 +65,5 @@ export default function Layout() {
     </div>
   );
 }
+
+export default memo(Layout);
