@@ -21,6 +21,15 @@ const LOCATION_FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&q=80&w=1200",
 ];
 
+const WEATHER_QUERY_FALLBACK: Record<string, string> = {
+  clear: FALLBACK_IMAGES.clear,
+  clouds: FALLBACK_IMAGES.clouds,
+  rain: FALLBACK_IMAGES.rain,
+  snow: FALLBACK_IMAGES.snow,
+  storm: FALLBACK_IMAGES.storm,
+  mist: FALLBACK_IMAGES.mist,
+};
+
 const hashText = (value: string) => {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
@@ -34,6 +43,17 @@ const getLocationFallbackImage = (seed: string) => {
   return LOCATION_FALLBACK_IMAGES[hashText(seed) % LOCATION_FALLBACK_IMAGES.length];
 };
 
+const getWeatherFallbackImage = (query: string) => {
+  const normalized = query.toLowerCase();
+  if (normalized.includes('clear') || normalized.includes('sun')) return WEATHER_QUERY_FALLBACK.clear;
+  if (normalized.includes('cloud')) return WEATHER_QUERY_FALLBACK.clouds;
+  if (normalized.includes('rain') || normalized.includes('drizzle')) return WEATHER_QUERY_FALLBACK.rain;
+  if (normalized.includes('snow')) return WEATHER_QUERY_FALLBACK.snow;
+  if (normalized.includes('thunder') || normalized.includes('storm')) return WEATHER_QUERY_FALLBACK.storm;
+  if (normalized.includes('mist') || normalized.includes('fog') || normalized.includes('haze')) return WEATHER_QUERY_FALLBACK.mist;
+  return FALLBACK_IMAGES.default;
+};
+
 export const unsplashService = {
   getWeatherImage: async (query: string, page = 1): Promise<string> => {
     const normalizedQuery = query.toLowerCase().trim();
@@ -44,13 +64,7 @@ export const unsplashService = {
     if (cachedImage) return cachedImage;
     
     if (!ACCESS_KEY) {
-      if (formattedQuery.includes('clear')) return FALLBACK_IMAGES.clear;
-      if (formattedQuery.includes('cloud')) return FALLBACK_IMAGES.clouds;
-      if (formattedQuery.includes('rain') || formattedQuery.includes('drizzle')) return FALLBACK_IMAGES.rain;
-      if (formattedQuery.includes('snow')) return FALLBACK_IMAGES.snow;
-      if (formattedQuery.includes('thunder') || formattedQuery.includes('storm')) return FALLBACK_IMAGES.storm;
-      if (formattedQuery.includes('mist') || formattedQuery.includes('fog')) return FALLBACK_IMAGES.mist;
-      return FALLBACK_IMAGES.default;
+      return getWeatherFallbackImage(query);
     }
 
     try {
@@ -62,15 +76,44 @@ export const unsplashService = {
           },
         }
       );
-      if (!response.ok) return FALLBACK_IMAGES.default;
+      if (!response.ok) return getWeatherFallbackImage(query);
 
       const data = await response.json();
-      const image = data.results[0]?.urls?.regular || FALLBACK_IMAGES.default;
+      const image = data.results?.[0]?.urls?.regular || getWeatherFallbackImage(query);
       imageCache.set(cacheKey, image);
       return image;
     } catch (error) {
       console.error('Unsplash fetch error:', error);
-      return FALLBACK_IMAGES.default;
+      return getWeatherFallbackImage(query);
+    }
+  },
+
+  getWeatherImageCandidates: async (query: string, page = 1): Promise<string[]> => {
+    const fallback = getWeatherFallbackImage(query);
+
+    if (!ACCESS_KEY) return [fallback];
+
+    try {
+      const response = await fetch(
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query.toLowerCase().trim())}&orientation=landscape&per_page=5&page=${page}&content_filter=high`,
+        {
+          headers: {
+            Authorization: `Client-ID ${ACCESS_KEY}`,
+          },
+        }
+      );
+
+      if (!response.ok) return [fallback];
+
+      const data = await response.json();
+      const images = (data.results || [])
+        .map((result: any) => result?.urls?.regular)
+        .filter(Boolean);
+
+      return [...images, fallback];
+    } catch (error) {
+      console.error('Unsplash fetch error:', error);
+      return [fallback];
     }
   },
 
@@ -92,5 +135,14 @@ export const unsplashService = {
     const resolvedImage = image === FALLBACK_IMAGES.default ? getLocationFallbackImage(seed) : image;
     imageCache.set(cacheKey, resolvedImage);
     return resolvedImage;
+  },
+
+  getLocationImageCandidates: async (city: string, country: string, condition: string, lat: number, lon: number): Promise<string[]> => {
+    const seed = `${city}-${country}-${condition}-${lat.toFixed(2)}-${lon.toFixed(2)}`;
+    const page = (hashText(seed) % 5) + 1;
+    const query = `${city} ${country} landmark city skyline ${condition} weather`;
+    const fallback = getLocationFallbackImage(seed);
+    const candidates = await unsplashService.getWeatherImageCandidates(query, page);
+    return [...new Set([...candidates, fallback, FALLBACK_IMAGES.default])];
   }
 };

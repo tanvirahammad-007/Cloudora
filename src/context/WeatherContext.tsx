@@ -21,6 +21,11 @@ interface WeatherContextType {
 }
 
 const WeatherContext = createContext<WeatherContextType | undefined>(undefined);
+const DEFAULT_LOCATION = {
+  lat: 23.8103,
+  lon: 90.4125,
+  name: 'Dhaka',
+};
 
 export function WeatherProvider({ children }: { children: ReactNode }) {
   const { settings } = useSettings();
@@ -87,7 +92,7 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    await fetchWeather(51.5074, -0.1278, 'London');
+    await fetchWeather(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon, DEFAULT_LOCATION.name);
   }, [currentParams, fetchWeather]);
 
   // Polling for real-time updates every 30 minutes
@@ -135,16 +140,18 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
       if (settings.autoLocation && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
-            await fetchWeather(position.coords.latitude, position.coords.longitude, 'Current Location');
+            const { latitude, longitude } = position.coords;
+            const locationName = await weatherService.getLocationName(latitude, longitude);
+            await fetchWeather(latitude, longitude, locationName);
           },
           async () => {
             reportError(createAppError({ kind: 'location-denied', source: 'geolocation' }));
-            await fetchWeather(51.5074, -0.1278, 'London');
+            await fetchWeather(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon, DEFAULT_LOCATION.name);
           },
           { enableHighAccuracy: false, maximumAge: 10 * 60 * 1000, timeout: 8000 }
         );
       } else {
-        await fetchWeather(51.5074, -0.1278, 'London');
+        await fetchWeather(DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lon, DEFAULT_LOCATION.name);
       }
     };
     init();

@@ -7,7 +7,7 @@ export default function NotificationToasts() {
   const { toasts, removeNotification, toggleRead } = useNotifications();
 
   return (
-    <div className="pointer-events-none fixed bottom-24 left-4 right-4 z-[250] flex flex-col gap-3 sm:bottom-auto sm:left-auto sm:right-6 sm:top-24 sm:w-[380px]" aria-live="polite" aria-relevant="additions removals">
+    <div className="pointer-events-none fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-4 right-4 z-[250] flex flex-col gap-3 sm:bottom-auto sm:left-auto sm:right-6 sm:top-28 sm:w-[380px] lg:right-8 lg:top-32 xl:right-10" aria-live="polite" aria-relevant="additions removals">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div

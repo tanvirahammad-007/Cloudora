@@ -156,6 +156,20 @@ export const weatherService = {
     }));
   },
 
+  async getLocationName(lat: number, lon: number): Promise<string> {
+    if (!API_KEY) return 'Dhaka';
+
+    try {
+      const res = await geoApiClient.get('/reverse', {
+        params: { lat, lon, limit: 1, appid: API_KEY },
+      });
+      const location = res.data?.[0];
+      return location?.local_names?.en || location?.name || 'Dhaka';
+    } catch {
+      return 'Dhaka';
+    }
+  },
+
   async getCurrentWeatherSummary(lat: number, lon: number) {
     if (!API_KEY) return null;
     const res = await weatherApiClient.get('/weather', {

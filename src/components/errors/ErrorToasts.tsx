@@ -13,7 +13,7 @@ export default function ErrorToasts() {
   const { toasts, dismissError } = useErrors();
 
   return (
-    <div className="pointer-events-none fixed bottom-6 left-4 right-4 z-[260] flex flex-col gap-3 sm:bottom-auto sm:left-auto sm:right-6 sm:top-40 sm:w-[390px]" aria-live="assertive" aria-relevant="additions removals">
+    <div className="pointer-events-none fixed bottom-6 left-4 right-4 z-[260] flex flex-col gap-3 sm:bottom-auto sm:left-auto sm:right-6 sm:top-52 sm:w-[390px] lg:right-8 lg:top-56 xl:right-10" aria-live="assertive" aria-relevant="additions removals">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.article

@@ -81,6 +81,7 @@ export default function WeatherHero() {
   const { settings } = useSettings();
   const { toggleFavorite, isFavorite } = useUser();
   const [bgImage, setBgImage] = useState<string | null>(null);
+  const [bgImageCandidates, setBgImageCandidates] = useState<string[]>([]);
   const [localTime, setLocalTime] = useState<string>('');
 
   useEffect(() => {
@@ -99,14 +100,17 @@ export default function WeatherHero() {
     if (!weather) return;
 
     let isActive = true;
-    unsplashService.getLocationImage(
+    setBgImageCandidates([]);
+    unsplashService.getLocationImageCandidates(
       weather.location.name,
       weather.location.country,
       weather.current.condition,
       weather.location.lat,
       weather.location.lon
-    ).then((image) => {
-      if (isActive) setBgImage(image);
+    ).then((images) => {
+      if (!isActive) return;
+      setBgImageCandidates(images);
+      setBgImage(images[0] || null);
     });
 
     return () => {
@@ -185,6 +189,13 @@ export default function WeatherHero() {
               src={bgImage}
               alt={`${weather.location.name} weather background`}
               decoding="async"
+              onError={() => {
+                const currentIndex = bgImageCandidates.indexOf(bgImage);
+                const nextImage = bgImageCandidates[currentIndex + 1];
+                if (nextImage) {
+                  setBgImage(nextImage);
+                }
+              }}
               className="w-full h-full object-cover brightness-[0.96] contrast-[1.14] saturate-[1.28] transition-transform duration-[40s] ease-linear"
               fallbackClassName="brightness-100 contrast-100 saturate-100"
             />
