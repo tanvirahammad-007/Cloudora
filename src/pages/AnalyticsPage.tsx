@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useWeather } from '../context/WeatherContext';
 import { useSettings } from '../context/SettingsContext';
 import { Activity, Filter, Download } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { unsplashService } from '../services/unsplashService';
 import ThermalVelocityChart from '../components/analytics/ThermalVelocityChart';
 import DailySummaryCard from '../components/analytics/DailySummaryCard';
@@ -43,10 +43,43 @@ export default function AnalyticsPage() {
   const isBangla = settings.language === 'bn';
 
   useEffect(() => {
-    if (weather) {
-      unsplashService.getWeatherImage(`${weather.location.name} sky weather`).then(setBgImage);
-    }
-  }, [weather]);
+    if (!weather) return;
+
+    let isActive = true;
+    unsplashService.getWeatherImage(`${weather.location.name} sky weather`).then((image) => {
+      if (isActive) setBgImage(image);
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [weather?.location.name]);
+
+  const chartData = useMemo(() => weather?.hourly.map((h) => ({
+    time: new Date(h.time).toLocaleTimeString([], { hour: '2-digit' }),
+    temp: h.temp,
+    humidity: h.humidity,
+    wind: h.windSpeed,
+  })) || [], [weather?.hourly]);
+
+  const handleExport = useCallback(() => {
+    if (!weather) return;
+
+    const exportPayload = {
+      location: weather.location,
+      current: weather.current,
+      aqi: weather.aqi,
+      hourly: chartData,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cloudora-${weather.location.name.toLowerCase().replace(/\s+/g, '-')}-analytics.json`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }, [chartData, weather]);
 
   if (loading && !weather) return <AnalyticsSkeleton />;
 
@@ -61,30 +94,6 @@ export default function AnalyticsPage() {
       </div>
     );
   }
-
-  const chartData = weather.hourly.map((h) => ({
-    time: new Date(h.time).toLocaleTimeString([], { hour: '2-digit' }),
-    temp: h.temp,
-    humidity: h.humidity,
-    wind: h.windSpeed,
-  }));
-
-  const handleExport = () => {
-    const exportPayload = {
-      location: weather.location,
-      current: weather.current,
-      aqi: weather.aqi,
-      hourly: chartData,
-      exportedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `cloudora-${weather.location.name.toLowerCase().replace(/\s+/g, '-')}-analytics.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
 
   return (
     <motion.div 

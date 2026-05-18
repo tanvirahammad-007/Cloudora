@@ -1,4 +1,4 @@
-import { SyntheticEvent, useState } from 'react';
+import { memo, SyntheticEvent, useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -14,8 +14,12 @@ interface SafeImageProps {
   onError?: (event: SyntheticEvent<HTMLImageElement, Event>) => void;
 }
 
-export default function SafeImage({ className, fallbackClassName, alt, onError, ...props }: SafeImageProps) {
+function SafeImage({ className, fallbackClassName, alt, onError, src, ...props }: SafeImageProps) {
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
 
   if (failed) {
     return (
@@ -36,6 +40,7 @@ export default function SafeImage({ className, fallbackClassName, alt, onError, 
   return (
     <img
       {...props}
+      src={src}
       alt={alt}
       className={className}
       onError={(event) => {
@@ -45,3 +50,5 @@ export default function SafeImage({ className, fallbackClassName, alt, onError, 
     />
   );
 }
+
+export default memo(SafeImage);

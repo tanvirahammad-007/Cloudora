@@ -3,7 +3,7 @@ import { useWeather } from '../../context/WeatherContext';
 import { useSettings } from '../../context/SettingsContext';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { unsplashService } from '../../services/unsplashService';
 import { getCountryName } from '../../lib/geoUtils';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +18,7 @@ export default function RightPanel({ className }: RightPanelProps) {
   const navigate = useNavigate();
   const [geoBg, setGeoBg] = useState<string | null>(null);
   const isBangla = settings.language === 'bn';
-  const copy = {
+  const copy = useMemo(() => ({
     recent: isBangla ? 'সাম্প্রতিক খোঁজ' : 'Recent searches',
     noRecent: isBangla ? 'কোনো খোঁজ নেই' : 'No recent searches',
     countryInfo: isBangla ? 'দেশের তথ্য' : 'Country info',
@@ -30,13 +30,20 @@ export default function RightPanel({ className }: RightPanelProps) {
     upgradeTitle: isBangla ? 'আরও সুবিধা' : 'More tools',
     upgradeText: isBangla ? 'আরও পুরোনো আবহাওয়া তথ্য ও ভালো পূর্বাভাস দেখুন।' : 'See more weather history and better forecasts.',
     upgradeButton: isBangla ? 'আপগ্রেড' : 'Upgrade',
-  };
+  }), [isBangla]);
 
   useEffect(() => {
-    if (weather) {
-      unsplashService.getWeatherImage(`${weather.location.name} ${weather.location.country} landmarks`).then(setGeoBg);
-    }
-  }, [weather]);
+    if (!weather) return;
+
+    let isActive = true;
+    unsplashService.getWeatherImage(`${weather.location.name} ${weather.location.country} landmarks`).then((image) => {
+      if (isActive) setGeoBg(image);
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [weather?.location.country, weather?.location.name]);
 
   return (
     <aside className={cn("flex flex-col gap-[var(--spacing-gap-md)] h-full pb-[var(--spacing-gap-md)]", className)}>

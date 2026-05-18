@@ -6,6 +6,7 @@ import { cn } from '../lib/utils';
 import WeatherMap from '../components/maps/WeatherMap';
 import MapLegend from '../components/maps/MapLegend';
 import RadarStatus from '../components/maps/RadarStatus';
+import { useMemo } from 'react';
 
 const MapsSkeleton = () => (
   <div className="flex-1 p-6 flex flex-col gap-8 h-full animate-pulse">
@@ -28,17 +29,17 @@ export default function MapsPage() {
   const { settings } = useSettings();
   const isBangla = settings.language === 'bn';
   
-  if (loading && !weather) return <MapsSkeleton />;
-  
-  const position: [number, number] = weather 
+  const position: [number, number] = useMemo(() => weather 
     ? [weather.location.lat, weather.location.lon] 
-    : [51.505, -0.09];
+    : [51.505, -0.09], [weather?.location.lat, weather?.location.lon]);
 
   const legendItems = [
     { label: isBangla ? 'বৃষ্টি' : 'Rain', color: 'bg-blue-500', range: isBangla ? 'মাঝারি' : 'Medium' },
     { label: isBangla ? 'মেঘ' : 'Cloud', color: 'bg-gray-400', range: isBangla ? 'বেশি' : 'High' },
     { label: isBangla ? 'তাপ' : 'Temp', color: 'bg-orange-500', range: isBangla ? 'বেশি' : 'High' }
   ];
+
+  if (loading && !weather) return <MapsSkeleton />;
 
   return (
     <motion.div 

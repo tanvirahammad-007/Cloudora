@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import NewExpeditionForm from '../components/travel/NewExpeditionForm';
 import SmartInsightCard from '../components/travel/SmartInsightCard';
 import TravelPlanCard from '../components/travel/TravelPlanCard';
@@ -15,23 +15,23 @@ export default function TravelPlannerPage() {
   const { settings } = useSettings();
   const isBangla = settings.language === 'bn';
 
-  useEffect(() => {
-    loadPlans();
+  const loadPlans = useCallback(() => {
+    setPlans(getPlans());
   }, []);
 
-  const loadPlans = () => {
-    setPlans(getPlans());
-  };
+  useEffect(() => {
+    loadPlans();
+  }, [loadPlans]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = useCallback((id: string) => {
     deletePlan(id);
     loadPlans();
-  };
+  }, [loadPlans]);
 
-  const filteredPlans = plans.filter(p => {
+  const filteredPlans = useMemo(() => plans.filter(p => {
     const isPast = new Date(p.endDate) < new Date();
     return activeTab === 'upcoming' ? !isPast : isPast;
-  });
+  }), [activeTab, plans]);
 
   return (
     <motion.div 

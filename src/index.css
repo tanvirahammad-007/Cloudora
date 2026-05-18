@@ -32,6 +32,8 @@
   html {
     scroll-behavior: smooth;
     text-rendering: optimizeLegibility;
+    width: 100%;
+    overflow-x: hidden;
   }
 
   :root {
@@ -75,6 +77,14 @@
     background: var(--bg-gradient);
     font-feature-settings: "cv02", "cv03", "cv04", "ss01";
     overscroll-behavior: none;
+    width: 100%;
+    touch-action: manipulation;
+  }
+
+  #root {
+    min-height: 100dvh;
+    overflow: hidden;
+    isolation: isolate;
   }
 
   * {
@@ -188,6 +198,12 @@
   .glass-panel,
   .glass-card {
     background: var(--panel-bg) !important;
+    transform: translateZ(0);
+  }
+
+  .premium-page,
+  .premium-page-inner {
+    min-width: 0;
   }
 
   .animate-float {
@@ -232,4 +248,5 @@
       transition-duration: 0.01ms !important;
     }
   }
+
 }

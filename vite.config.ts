@@ -22,5 +22,18 @@ export default defineConfig(({mode}) => {
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            motion: ['motion'],
+            charts: ['recharts'],
+            maps: ['leaflet', 'react-leaflet'],
+            ui: ['lucide-react'],
+          },
+        },
+      },
+    },
   };
 });

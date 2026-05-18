@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { useSettings } from '../../context/SettingsContext';
 import { Cloud, CloudRain, Wind } from 'lucide-react';
+import { memo } from 'react';
 
 const windCurrents = [
   { top: '12%', left: '-12%', width: '44vw', rotate: '-8deg', delay: 0, duration: 18, className: 'via-sky-400/20 dark:via-cyan-300/12' },
@@ -35,9 +36,10 @@ const shimmerLines = [
   { top: '86%', left: '34%', width: '14rem', delay: 10 },
 ];
 
-export default function LivelyBackground() {
+function LivelyBackground() {
   const { settings } = useSettings();
   const isDark = settings.theme === 'dark';
+  const animationsEnabled = settings.animationsEnabled;
 
   if (!settings.dynamicBackground) return null;
 
@@ -48,10 +50,10 @@ export default function LivelyBackground() {
       {windCurrents.map((current) => (
         <motion.div
           key={`${current.top}-${current.left}`}
-          animate={{
+          animate={animationsEnabled ? {
             x: ['-8%', '12%', '-8%'],
             opacity: [0.18, 0.42, 0.18],
-          }}
+          } : undefined}
           transition={{
             duration: current.duration,
             repeat: Infinity,
@@ -64,18 +66,18 @@ export default function LivelyBackground() {
             width: current.width,
             transform: `rotate(${current.rotate})`,
           }}
-          className={`absolute z-[1] h-24 bg-gradient-to-r from-transparent ${current.className} to-transparent blur-3xl`}
+          className={`absolute z-[1] h-24 transform-gpu bg-gradient-to-r from-transparent ${current.className} to-transparent blur-3xl will-change-transform`}
         />
       ))}
 
       {cloudDrifts.map(({ Icon, ...cloud }) => (
         <motion.div
           key={`${cloud.top}-${cloud.left}`}
-          animate={{
+          animate={animationsEnabled ? {
             x: [0, 34, 0],
             y: [0, -16, 0],
             opacity: [0.12, 0.28, 0.12],
-          }}
+          } : undefined}
           transition={{
             duration: cloud.duration,
             repeat: Infinity,
@@ -83,7 +85,7 @@ export default function LivelyBackground() {
             delay: cloud.delay,
           }}
           style={{ top: cloud.top, left: cloud.left }}
-          className="absolute z-[1] text-sky-700/45 dark:text-white/30"
+          className="absolute z-[1] transform-gpu text-sky-700/45 will-change-transform dark:text-white/30"
         >
           <Icon size={cloud.size} strokeWidth={1} />
         </motion.div>
@@ -96,11 +98,11 @@ export default function LivelyBackground() {
           return (
             <motion.div
               key={`${cloud.top}-${cloud.left}`}
-              animate={{
+              animate={animationsEnabled ? {
                 x: [0, 230, 0],
                 y: [0, -26, 0],
                 opacity: [cloudOpacity * 0.82, cloudOpacity, cloudOpacity * 0.82],
-              }}
+              } : undefined}
               transition={{
                 duration: cloud.duration,
                 repeat: Infinity,
@@ -108,7 +110,7 @@ export default function LivelyBackground() {
                 delay: cloud.delay,
               }}
               style={{ top: cloud.top, left: cloud.left, width: cloud.width, height: cloud.height }}
-              className="absolute z-[3]"
+              className="absolute z-[3] transform-gpu will-change-transform"
             >
               <div className="absolute inset-x-[6%] bottom-[10%] h-[42%] rounded-full bg-slate-400/28 blur-2xl dark:bg-slate-950/12" />
               <div className="absolute left-[4%] top-[42%] h-[36%] w-[92%] rounded-full bg-white/95 blur-xl dark:bg-white/8" />
@@ -125,11 +127,11 @@ export default function LivelyBackground() {
       {lightModeStormClouds.map((cloud) => (
         <motion.div
           key={`${cloud.top}-${cloud.left}-storm`}
-          animate={{
+          animate={animationsEnabled ? {
             x: [0, 190, 0],
             y: [0, -18, 0],
             opacity: [cloud.opacity * 0.76, cloud.opacity, cloud.opacity * 0.76],
-          }}
+          } : undefined}
           transition={{
             duration: cloud.duration,
             repeat: Infinity,
@@ -137,7 +139,7 @@ export default function LivelyBackground() {
             delay: cloud.delay,
           }}
           style={{ top: cloud.top, left: cloud.left, width: cloud.width, height: cloud.height }}
-          className="absolute z-[4] dark:hidden"
+          className="absolute z-[4] transform-gpu will-change-transform dark:hidden"
         >
           <div className="absolute inset-x-[5%] bottom-[8%] h-[44%] rounded-full bg-sky-900/24 blur-2xl" />
           <div className="absolute left-[3%] top-[42%] h-[36%] w-[94%] rounded-full bg-slate-950/42 blur-xl" />
@@ -152,7 +154,7 @@ export default function LivelyBackground() {
       {shimmerLines.map((line) => (
         <motion.div
           key={`${line.top}-${line.left}`}
-          animate={{ x: ['-20%', '120%'], opacity: [0, 0.32, 0] }}
+          animate={animationsEnabled ? { x: ['-20%', '120%'], opacity: [0, 0.32, 0] } : undefined}
           transition={{
             duration: 9,
             repeat: Infinity,
@@ -160,9 +162,11 @@ export default function LivelyBackground() {
             delay: line.delay,
           }}
           style={{ top: line.top, left: line.left, width: line.width }}
-          className="absolute z-[1] h-px bg-gradient-to-r from-transparent via-sky-500/25 to-transparent dark:via-white/15"
+          className="absolute z-[1] h-px transform-gpu bg-gradient-to-r from-transparent via-sky-500/25 to-transparent will-change-transform dark:via-white/15"
         />
       ))}
     </div>
   );
 }
+
+export default memo(LivelyBackground);

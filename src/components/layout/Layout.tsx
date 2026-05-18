@@ -3,6 +3,13 @@ import Header from './Header';
 import { useWeather } from '../../context/WeatherContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { Suspense } from 'react';
+
+const OutletFallback = () => (
+  <div className="flex min-h-[50vh] items-center justify-center">
+    <div className="glass-panel h-16 w-16 animate-pulse rounded-[1.5rem] border border-[var(--border-color)]" />
+  </div>
+);
 
 export default function Layout() {
   const { loading } = useWeather();
@@ -36,7 +43,9 @@ export default function Layout() {
                 key={location.pathname}
                 className="h-full flex-1 animate-fadeIn"
               >
-                <Outlet />
+                <Suspense fallback={<OutletFallback />}>
+                  <Outlet />
+                </Suspense>
               </div>
           </main>
         </div>

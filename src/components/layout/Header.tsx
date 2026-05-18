@@ -1,5 +1,5 @@
 import { Search, MapPin, X, Loader2, Sparkles } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useWeather } from '../../context/WeatherContext';
 import { weatherService } from '../../services/weatherService';
 import { CitySuggestion } from '../../types/weather';
@@ -30,23 +30,28 @@ export default function Header() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    let isActive = true;
     setSelectedIndex(-1);
     const delayDebounceFn = setTimeout(async () => {
       if (query.length > 2) {
         setIsSearching(true);
         try {
           const results = await weatherService.searchCities(query);
+          if (!isActive) return;
           setSuggestions(results);
           setShowSuggestions(true);
           setSearchError('');
         } catch (err) {
+          if (!isActive) return;
           console.error('Search failed', err);
           const normalized = reportError(normalizeError(err, { kind: 'api', source: 'header-search' }));
           setSuggestions([]);
           setShowSuggestions(true);
           setSearchError(normalized.friendlyMessage);
         } finally {
-          setIsSearching(false);
+          if (isActive) {
+            setIsSearching(false);
+          }
         }
       } else {
         setSuggestions([]);
@@ -55,8 +60,11 @@ export default function Header() {
       }
     }, 400);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [query]);
+    return () => {
+      isActive = false;
+      clearTimeout(delayDebounceFn);
+    };
+  }, [query, reportError]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -68,16 +76,16 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelect = (city: CitySuggestion) => {
+  const handleSelect = useCallback((city: CitySuggestion) => {
     fetchWeather(city.lat, city.lon, city.name);
     addToHistory(city);
     setQuery('');
     setShowSuggestions(false);
     inputRef.current?.blur();
     navigate('/');
-  };
+  }, [addToHistory, fetchWeather, navigate]);
 
-  const handleSearchClick = () => {
+  const handleSearchClick = useCallback(() => {
     if (!query.trim()) {
       const emptyError = reportError(createAppError({ kind: 'empty-search', source: 'header-search' }));
       setSearchError(emptyError.friendlyMessage);
@@ -94,14 +102,14 @@ export default function Header() {
     const cityError = reportError(createAppError({ kind: 'invalid-city', source: 'header-search' }));
     setSearchError(cityError.friendlyMessage);
     setShowSuggestions(true);
-  };
+  }, [handleSelect, query, reportError, selectedIndex, suggestions]);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setQuery('');
     setSuggestions([]);
     setShowSuggestions(false);
     inputRef.current?.focus();
-  };
+  }, []);
 
   return (
     <header className="relative z-20 flex min-h-20 w-full flex-wrap items-center justify-between gap-x-3 gap-y-3 bg-transparent px-4 py-3 lg:h-24 lg:flex-nowrap lg:px-8 lg:py-0">
@@ -187,7 +195,7 @@ export default function Header() {
                 }
               }}
               onFocus={() => query.length > 2 && setShowSuggestions(true)}
-              className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[var(--text-main)] font-semibold text-sm lg:text-base placeholder:text-[var(--text-muted)] opacity-80"
+              className="min-w-0 flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[var(--text-main)] font-semibold text-sm lg:text-base placeholder:text-[var(--text-muted)] opacity-80"
             />
 
             <AnimatePresence>

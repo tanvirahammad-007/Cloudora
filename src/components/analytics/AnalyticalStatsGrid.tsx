@@ -1,18 +1,19 @@
 import { Zap, Wind, Info, Activity } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
+import { memo, useMemo } from 'react';
 
 interface AnalyticalStatsGridProps {
   windSpeed: number;
 }
 
-export default function AnalyticalStatsGrid({ windSpeed }: AnalyticalStatsGridProps) {
-  const stats = [
+function AnalyticalStatsGrid({ windSpeed }: AnalyticalStatsGridProps) {
+  const stats = useMemo(() => [
     { icon: Zap, label: 'UV Flux', value: '7.4', unit: 'Index', color: 'text-amber-500' },
     { icon: Wind, label: 'Gust Max', value: windSpeed, unit: 'km/h', color: 'text-indigo-500' },
     { icon: Info, label: 'Dew Point', value: '18', unit: '°C', color: 'text-emerald-500' },
     { icon: Activity, label: 'Inertia', value: '1.2', unit: 'mb/s', color: 'text-purple-500' }
-  ];
+  ], [windSpeed]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6" role="list" aria-label="Analytical weather statistics">
@@ -39,3 +40,5 @@ export default function AnalyticalStatsGrid({ windSpeed }: AnalyticalStatsGridPr
     </div>
   );
 }
+
+export default memo(AnalyticalStatsGrid);

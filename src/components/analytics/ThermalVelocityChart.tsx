@@ -1,11 +1,12 @@
 import { Thermometer } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { memo } from 'react';
 
 interface ThermalVelocityChartProps {
   data: any[];
 }
 
-export default function ThermalVelocityChart({ data }: ThermalVelocityChartProps) {
+function ThermalVelocityChart({ data }: ThermalVelocityChartProps) {
   return (
     <section aria-label="Thermal velocity chart" className="xl:col-span-2 glass-panel p-6 sm:p-8 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] shadow-xl overflow-hidden relative group transition-all hover:border-indigo-500/20">
       <div className="flex items-center justify-between mb-8 lg:mb-12">
@@ -53,10 +54,12 @@ export default function ThermalVelocityChart({ data }: ThermalVelocityChartProps
                 color: 'var(--text-main)'
               }} 
             />
-            <Area type="monotone" dataKey="temp" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorTempAnalytics)" />
+            <Area type="monotone" dataKey="temp" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorTempAnalytics)" animationDuration={900} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
     </section>
   );
 }
+
+export default memo(ThermalVelocityChart);

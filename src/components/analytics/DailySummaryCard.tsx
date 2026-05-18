@@ -1,13 +1,16 @@
 import { TrendingUp, Droplets, Wind } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { memo, useMemo } from 'react';
 
 interface DailySummaryCardProps {
   weather: any;
   chartData: any[];
 }
 
-export default function DailySummaryCard({ weather, chartData }: DailySummaryCardProps) {
+function DailySummaryCard({ weather, chartData }: DailySummaryCardProps) {
+  const windBars = useMemo(() => chartData.slice(0, 12), [chartData]);
+
   return (
     <section aria-label="Daily weather summary" className="glass-panel p-6 sm:p-8 lg:p-10 rounded-[2.5rem] lg:rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] shadow-xl h-full flex flex-col justify-between group transition-all hover:border-indigo-500/20">
       <div>
@@ -42,9 +45,9 @@ export default function DailySummaryCard({ weather, chartData }: DailySummaryCar
             </div>
             <div className="h-24 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData.slice(0, 12)}>
+                <BarChart data={windBars}>
                   <Bar dataKey="wind" radius={[4, 4, 0, 0]}>
-                    {chartData.map((_entry: any, index: number) => (
+                    {windBars.map((_entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#6366f1' : '#a855f7'} />
                     ))}
                   </Bar>
@@ -57,3 +60,5 @@ export default function DailySummaryCard({ weather, chartData }: DailySummaryCar
     </section>
   );
 }
+
+export default memo(DailySummaryCard);

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import { WeatherData, CitySuggestion } from '../types/weather';
 import { weatherService } from '../services/weatherService';
 import { useSettings } from './SettingsContext';
@@ -31,6 +31,8 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
   const [appError, setAppError] = useState<AppError | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [currentParams, setCurrentParams] = useState<{ lat: number; lon: number; cityName: string } | null>(null);
+  const activeRequestRef = useRef(0);
+  const mountedRef = useRef(true);
 
   const [searchHistory, setSearchHistory] = useState<CitySuggestion[]>(() => {
     if (typeof window === 'undefined') return [];
@@ -44,23 +46,40 @@ export function WeatherProvider({ children }: { children: ReactNode }) {
   });
 
   const fetchWeather = useCallback(async (lat: number, lon: number, cityName: string) => {
+    const requestId = activeRequestRef.current + 1;
+    activeRequestRef.current = requestId;
     setLoading(true);
     setError(null);
     setAppError(null);
+
+    const isLatestRequest = () => mountedRef.current && activeRequestRef.current === requestId;
+
     try {
       const data = await weatherService.getWeatherData(lat, lon, cityName);
+      if (!isLatestRequest()) return;
       setWeather(data);
       setLastUpdated(new Date());
       setCurrentParams({ lat, lon, cityName });
     } catch (err: any) {
+      if (!isLatestRequest()) return;
       console.error(err);
       const normalized = reportError(normalizeError(err, { kind: 'api', source: 'weather-context' }));
       setAppError(normalized);
       setError(normalized.friendlyMessage);
     } finally {
-      setLoading(false);
+      if (isLatestRequest()) {
+        setLoading(false);
+      }
     }
   }, [reportError]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      activeRequestRef.current += 1;
+    };
+  }, []);
 
   const retryFetchWeather = useCallback(async () => {
     if (currentParams) {

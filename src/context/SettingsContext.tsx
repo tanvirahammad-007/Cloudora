@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useMemo } from 'react';
 
 export type TemperatureUnit = 'C' | 'F';
 export type WindSpeedUnit = 'km/h' | 'mph' | 'm/s' | 'knots';
@@ -93,8 +93,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' });
-  }, [settings.theme, updateSettings]);
+    setSettingsState((prev) => {
+      const updated = { ...prev, theme: prev.theme === 'dark' ? 'light' : 'dark' };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cloudora-settings', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  }, []);
 
   // Apply Theme
   useEffect(() => {
@@ -134,8 +140,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [settings.compactMode]);
 
+  const value = useMemo(() => ({
+    settings,
+    updateSettings,
+    toggleTheme,
+  }), [settings, toggleTheme, updateSettings]);
+
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, toggleTheme }}>
+    <SettingsContext.Provider value={value}>
       {children}
     </SettingsContext.Provider>
   );

@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { convertTemp } from '../../lib/unitUtils';
 import ErrorStateCard from '../errors/ErrorStateCard';
 import SafeImage from '../common/SafeImage';
+import { useCallback, useMemo } from 'react';
 
 const HourlyForecastSkeleton = () => (
   <div className="glass-panel p-10 flex flex-col rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)] h-full min-h-[360px] animate-pulse">
@@ -49,15 +50,15 @@ export default function HourlyForecast() {
     );
   }
 
-  const chartData = weather.hourly.map(h => ({
+  const chartData = useMemo(() => weather.hourly.map(h => ({
     time: new Date(h.time).getHours() + ':00',
     temp: Math.round(convertTemp(h.temp, settings.tempUnit)),
-  }));
+  })), [settings.tempUnit, weather.hourly]);
 
-  const formatTime = (timeStr: string) => {
+  const formatTime = useCallback((timeStr: string) => {
     const date = new Date(timeStr);
     return date.toLocaleTimeString([], { hour: 'numeric', hour12: true });
-  };
+  }, []);
 
   return (
     <section aria-label="Hourly forecast" className="glass-panel p-[var(--spacing-gap-md)] flex flex-col rounded-[3.5rem] border border-[var(--border-color)] bg-[var(--panel-bg)]/80 h-full min-h-[360px] group transition-all duration-700 hover:shadow-2xl hover:shadow-[var(--text-main)]/5 relative overflow-hidden">
@@ -100,7 +101,7 @@ export default function HourlyForecast() {
 
       <div className="flex-1 -mx-8 -mb-8 h-40 opacity-10 group-hover:opacity-25 transition-opacity duration-1000 mt-6 pointer-events-none">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
+            <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4}/>
@@ -131,7 +132,8 @@ export default function HourlyForecast() {
               fillOpacity={1} 
               fill="url(#colorTemp)" 
               className="text-[var(--text-main)]"
-              animationDuration={2500}
+              isAnimationActive={settings.animationsEnabled}
+              animationDuration={settings.animationsEnabled ? 1200 : 0}
               animationEasing="ease-in-out"
             />
           </AreaChart>

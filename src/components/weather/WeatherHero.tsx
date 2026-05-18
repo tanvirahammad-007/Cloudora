@@ -3,7 +3,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { useUser } from '../../context/UserContext';
 import { Wind, Droplets, Thermometer, Sunrise, Sunset, AlertCircle, MapPin, Heart, CloudRain, CloudSnow, CloudLightning, CloudFog, Sun, Moon, CloudSun, CloudMoon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { unsplashService } from '../../services/unsplashService';
 import { cn } from '../../lib/utils';
 import { getCountryName } from '../../lib/geoUtils';
@@ -114,9 +114,9 @@ export default function WeatherHero() {
     };
   }, [weather?.location.lat, weather?.location.lon, weather?.location.name, weather?.location.country, weather?.current.condition]);
 
-  const formatTime = (timestamp: number) => {
+  const formatTime = useCallback((timestamp: number) => {
     return formatLocationTime(new Date(timestamp * 1000), weather?.location.timezone);
-  };
+  }, [weather?.location.timezone]);
 
   if (loading && !weather) return <WeatherHeroSkeleton />;
 
@@ -156,6 +156,12 @@ export default function WeatherHero() {
   };
 
   const isFav = isFavorite(weather.location.lat, weather.location.lon);
+  const statItems = [
+    { icon: Droplets, label: copy.humidity, value: `${weather.current.humidity}%`, iconColor: 'text-sky-400' },
+    { icon: Wind, label: copy.wind, value: `${currentWindSpeed}${settings.windUnit}`, iconColor: 'text-emerald-400' },
+    { icon: Sunrise, label: copy.sunrise, value: formatTime(weather.current.sunrise), iconColor: 'text-amber-400' },
+    { icon: Sunset, label: copy.sunset, value: formatTime(weather.current.sunset), iconColor: 'text-rose-400' },
+  ];
 
   return (
     <motion.div
@@ -262,12 +268,7 @@ export default function WeatherHero() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4 xl:gap-6">
-          {[
-            { icon: Droplets, label: copy.humidity, value: `${weather.current.humidity}%`, iconColor: 'text-sky-400' },
-            { icon: Wind, label: copy.wind, value: `${currentWindSpeed}${settings.windUnit}`, iconColor: 'text-emerald-400' },
-            { icon: Sunrise, label: copy.sunrise, value: formatTime(weather.current.sunrise), iconColor: 'text-amber-400' },
-            { icon: Sunset, label: copy.sunset, value: formatTime(weather.current.sunset), iconColor: 'text-rose-400' },
-          ].map((item, i) => (
+          {statItems.map((item, i) => (
             <motion.div
               key={i}
               initial={{ y: 20, opacity: 0 }}
